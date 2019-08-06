@@ -11,10 +11,8 @@
 
 ## Require
 1. [Pytorch](http://pytorch.org/)
-2. [Caffe](http://caffe.berkeleyvision.org/) is required if you want convert caffe model to a pytorch model.
 3. pip install pycocotools
 4. pip install tensorboardX
-5. pip install torch-encoding
 
 
 ## Demo
@@ -36,14 +34,11 @@ c
 
 
 ## Training
-- `cd training; bash getData.sh` to obtain the COCO images in `dataset/COCO/images/`, keypoints annotations in `dataset/COCO/annotations/`
-- Download the mask of the unlabeled person at [Dropbox](https://www.dropbox.com/s/bd9ty7b4fqd5ebf/mask.tar.gz?dl=0)
-- Download the official training format at [Dropbox](https://www.dropbox.com/s/0sj2q24hipiiq5t/COCO.json?dl=0)
-- `python train_VGG19.py --batch_size 100 --logdir {where to store tensorboardX logs}`
+- `cd training; bash getData.sh` to obtain the COCO images in `*/images/`, keypoints annotations in `*/annotations/`
+- Modify the data directory in `train_VGG19.py` and `python train_VGG19.py`
 - `python train_ShuffleNetV2.py --batch_size 160 --logdir {where to store tensorboardX logs}`
 - `python train_SH.py --batch_size 64 --lr 0.1 --logdir {where to store tensorboardX logs}`
 ## Related repository
-- CVPR'16, [Convolutional Pose Machines](https://github.com/shihenw/convolutional-pose-machines-release).
 - CVPR'17, [Realtime Multi-Person Pose Estimation](https://github.com/ZheC/Realtime_Multi-Person_Pose_Estimation).
 
 ### Network Architecture
