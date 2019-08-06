@@ -42,9 +42,7 @@ ${YOUR_DATA_ROOT}
     `-- |-- annotations
         |   |-- person_keypoints_train2017.json
         |   `-- person_keypoints_val2017.json
-        |-- person_detection_results
-        |   |-- COCO_val2017_detections_AP_H_56_person.json
-        `-- images
+        |-- images
             |-- train2017
             |   |-- 000000000009.jpg
             |   |-- 000000000025.jpg
@@ -55,6 +53,8 @@ ${YOUR_DATA_ROOT}
                 |-- 000000000285.jpg
                 |-- 000000000632.jpg
                 |-- ... 
+        
+
 ```
 - Modify the data directory in `train_VGG19.py` and `python train_VGG19.py`
 - `python train_ShuffleNetV2.py --batch_size 160 --logdir {where to store tensorboardX logs}`
