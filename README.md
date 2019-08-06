@@ -19,8 +19,7 @@
 
 ## Demo
 - Download [converted pytorch model](https://www.dropbox.com/s/ae071mfm2qoyc8v/pose_model.pth?dl=0).
-- `cd network/caffe_to_pytorch; python convert.py` to convert a trained caffe model to pytorch model. The converted model have relative error less than 1e-6, and will be located in `./network/weight` after convert.
-- Or use the model trained from scratch in [this repo](https://www.dropbox.com/s/5v654d2u65fuvyr/pose_model_scratch.pth?dl=0), which has better accuracy on the validataion set.
+- Compile the C++ postprocessing: `cd pafprocess; swig -python -c++ pafprocess.i && python3 setup.py build_ext --inplace` 
 - `python demo/picture_demo.py` to run the picture demo.
 - `python demo/web_demo.py` to run the web demo.
 
