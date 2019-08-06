@@ -40,8 +40,8 @@ make them look like this:
 ${DATA_ROOT}
 |-- coco
     |-- annotations
-    |   |-- person_keypoints_train2017.json
-           |-- person_keypoints_val2017.json
+        |-- person_keypoints_train2017.json
+        |-- person_keypoints_val2017.json
     |-- images
         |-- train2017
             |-- 000000000009.jpg
