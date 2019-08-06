@@ -337,7 +337,7 @@ for epoch in range(5):
     train_loss = train(train_loader, model, optimizer, epoch)
 
     # evaluate on validation set
-    val_loss = validate(valid_loader, model, epoch)  
+    val_loss = validate(val_loader, model, epoch)  
                                  
     writer.add_scalars('data/scalar_group', {'train loss': train_loss,
                                              'val loss': val_loss}, epoch)            
@@ -363,7 +363,7 @@ for epoch in range(5, args.epochs):
     train_loss = train(train_data, model, optimizer, epoch)
 
     # evaluate on validation set
-    val_loss = validate(valid_loader, model, epoch)   
+    val_loss = validate(val_loader, model, epoch)   
     
     lr_scheduler.step(val_loss)                        
     
