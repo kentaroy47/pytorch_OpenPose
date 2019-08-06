@@ -34,25 +34,25 @@ c
 
 
 ## Training
-- `cd training; bash getData.sh` to obtain the COCO 2017 images in `/your/data/root/coco/images/`, keypoints annotations in `/your/data/root/coco/annotations/`,
+- `cd training; bash getData.sh` to obtain the COCO 2017 images in `/data/root/coco/images/`, keypoints annotations in `/data/root/coco/annotations/`,
 make them look like this:
 ```
-${YOUR_DATA_ROOT}
+${DATA_ROOT}
 |-- coco
-    `-- |-- annotations
-        |   |-- person_keypoints_train2017.json
-        |   `-- person_keypoints_val2017.json
-        |-- images
-            |-- train2017
-            |   |-- 000000000009.jpg
-            |   |-- 000000000025.jpg
-            |   |-- 000000000030.jpg
-            |   |-- ... 
-            `-- val2017
-                |-- 000000000139.jpg
-                |-- 000000000285.jpg
-                |-- 000000000632.jpg
-                |-- ... 
+    -- |-- annotations
+       |   |-- person_keypoints_train2017.json
+           |-- person_keypoints_val2017.json
+       |-- images
+           |-- train2017
+               |-- 000000000009.jpg
+               |-- 000000000025.jpg
+               |-- 000000000030.jpg
+               |-- ... 
+           |-- val2017
+               |-- 000000000139.jpg
+               |-- 000000000285.jpg
+               |-- 000000000632.jpg
+               |-- ... 
         
 
 ```
