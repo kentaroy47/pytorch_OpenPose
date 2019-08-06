@@ -7,15 +7,9 @@ data/*
 .ipynb_checkpoints
 notebooks/*.pkl
 
-/Outputs
+/outputs
 
 # ------------------------------
-
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
 
 # General
 .DS_Store
