@@ -17,14 +17,8 @@ from scipy import misc, ndimage
 """
 
 
-def putGaussianMaps(center, accumulate_confid_map, params_transform):
-    crop_size_y = params_transform['crop_size_y']
-    crop_size_x = params_transform['crop_size_x']
-    stride = params_transform['stride']
-    sigma = params_transform['sigma']
+def putGaussianMaps(center, accumulate_confid_map, sigma, grid_y, grid_x, stride):
 
-    grid_y = crop_size_y / stride
-    grid_x = crop_size_x / stride
     start = stride / 2.0 - 0.5
     y_range = [i for i in range(int(grid_y))]
     x_range = [i for i in range(int(grid_x))]
@@ -38,4 +32,5 @@ def putGaussianMaps(center, accumulate_confid_map, params_transform):
     cofid_map = np.multiply(mask, cofid_map)
     accumulate_confid_map += cofid_map
     accumulate_confid_map[accumulate_confid_map > 1.0] = 1.0
+    
     return accumulate_confid_map

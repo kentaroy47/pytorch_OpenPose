@@ -15,16 +15,11 @@ import numpy as np
 from scipy import misc, ndimage
 
 
-def putVecMaps(centerA, centerB, accumulate_vec_map, count, params_transform):
+def putVecMaps(centerA, centerB, accumulate_vec_map, count, grid_y, grid_x, stride):
     centerA = centerA.astype(float)
     centerB = centerB.astype(float)
 
-    stride = params_transform['stride']
-    crop_size_y = params_transform['crop_size_y']
-    crop_size_x = params_transform['crop_size_x']
-    grid_y = crop_size_y / stride
-    grid_x = crop_size_x / stride
-    thre = params_transform['limb_width']   # limb width
+    thre = 1  # limb width
     centerB = centerB / stride
     centerA = centerA / stride
 
@@ -51,6 +46,7 @@ def putVecMaps(centerA, centerB, accumulate_vec_map, count, params_transform):
     mask = limb_width < thre  # mask is 2D
 
     vec_map = np.copy(accumulate_vec_map) * 0.0
+
     vec_map[yy, xx] = np.repeat(mask[:, :, np.newaxis], 2, axis=2)
     vec_map[yy, xx] *= limb_vec_unit[np.newaxis, np.newaxis, :]
 

@@ -10,69 +10,128 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 #import encoding
 from network.rtpose_vgg import get_model, use_vgg
-from training.datasets.coco import get_loader
+from datasets import coco, transforms, datasets
 
-# Hyper-params
-parser = argparse.ArgumentParser(description='PyTorch rtpose Training')
-parser.add_argument('--data_dir', default='/data/coco/images', type=str, metavar='DIR',
-                    help='path to where coco images stored') 
-parser.add_argument('--mask_dir', default='/data/coco/', type=str, metavar='DIR',
-                    help='path to where coco images stored')    
-parser.add_argument('--logdir', default='/extra/tensorboy', type=str, metavar='DIR',
-                    help='path to where tensorboard log restore')                                       
-parser.add_argument('--json_path', default='/data/coco/COCO.json', type=str, metavar='PATH',
-                    help='path to where coco images stored')                                      
+ANNOTATIONS_DIR = '/home/tensorboy/data/coco/annotations/'
 
-parser.add_argument('--model_path', default='./network/weight/', type=str, metavar='DIR',
-                    help='path to where the model saved') 
-                    
-parser.add_argument('--lr', '--learning-rate', default=1., type=float,
+ANNOTATIONS_TRAIN = [os.path.join(ANNOTATIONS_DIR, item) for item in ['person_keypoints_train2017.json']]
+ANNOTATIONS_VAL = os.path.join(ANNOTATIONS_DIR, 'person_keypoints_val2017.json')
+IMAGE_DIR_TRAIN = '/home/tensorboy/data/coco/images/train2017'
+IMAGE_DIR_VAL = '/home/tensorboy/data/coco/images/val2017'
+
+
+def train_cli(parser):
+    group = parser.add_argument_group('dataset and loader')
+    group.add_argument('--train-annotations', default=ANNOTATIONS_TRAIN)
+    group.add_argument('--train-image-dir', default=IMAGE_DIR_TRAIN)
+    group.add_argument('--val-annotations', default=ANNOTATIONS_VAL)
+    group.add_argument('--val-image-dir', default=IMAGE_DIR_VAL)
+    group.add_argument('--pre-n-images', default=8000, type=int,
+                       help='number of images to sampe for pretraining')
+    group.add_argument('--n-images', default=None, type=int,
+                       help='number of images to sample')
+    group.add_argument('--duplicate-data', default=None, type=int,
+                       help='duplicate data')
+    group.add_argument('--loader-workers', default=8, type=int,
+                       help='number of workers for data loading')
+    group.add_argument('--batch-size', default=72, type=int,
+                       help='batch size')
+    group.add_argument('--lr', '--learning-rate', default=1., type=float,
                     metavar='LR', help='initial learning rate')
-
-parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
+    group.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
- 
-parser.add_argument('--epochs', default=200, type=int, metavar='N',
-                    help='number of total epochs to run')
-                    
-parser.add_argument('--weight-decay', '--wd', default=0.000, type=float,
-                    metavar='W', help='weight decay (default: 1e-4)')  
-parser.add_argument('--nesterov', dest='nesterov', action='store_true')     
-                                                   
-parser.add_argument('-o', '--optim', default='sgd', type=str)
-#Device options
-parser.add_argument('--gpu_ids', dest='gpu_ids', help='which gpu to use', nargs="+",
-                    default=[0,1,2,3], type=int)
-                    
-parser.add_argument('-b', '--batch_size', default=80, type=int,
-                    metavar='N', help='mini-batch size (default: 256)')
+    group.add_argument('--weight-decay', '--wd', default=0.000, type=float,
+                    metavar='W', help='weight decay (default: 1e-4)') 
+    group.add_argument('--nesterov', dest='nesterov', default=True, type=bool)     
+    group.add_argument('--print_freq', default=20, type=int, metavar='N',
+                    help='number of iterations to print the training statistics')    
+                                         
+def train_factory(args, preprocess, target_transforms):
+    train_datas = [datasets.CocoKeypoints(
+        root=args.train_image_dir,
+        annFile=item,
+        preprocess=preprocess,
+        image_transform=transforms.image_transform_train,
+        target_transforms=target_transforms,
+        n_images=args.n_images,
+    ) for item in args.train_annotations]
 
-parser.add_argument('--print_freq', default=20, type=int, metavar='N',
-                    help='number of iterations to print the training statistics')
-from tensorboardX import SummaryWriter      
-args = parser.parse_args()  
-               
-os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(str(e) for e in args.gpu_ids)
 
-params_transform = dict()
-params_transform['mode'] = 5
-# === aug_scale ===
-params_transform['scale_min'] = 0.5
-params_transform['scale_max'] = 1.1
-params_transform['scale_prob'] = 1
-params_transform['target_dist'] = 0.6
-# === aug_rotate ===
-params_transform['max_rotate_degree'] = 40
+    train_data = torch.utils.data.ConcatDataset(train_datas)
+    
+    train_loader = torch.utils.data.DataLoader(
+        train_data, batch_size=args.batch_size, shuffle=True,
+        pin_memory=args.pin_memory, num_workers=args.loader_workers, drop_last=True)
 
-# ===
-params_transform['center_perterb_max'] = 40
+    val_data = datasets.CocoKeypoints(
+        root=args.val_image_dir,
+        annFile=args.val_annotations,
+        preprocess=preprocess,
+        image_transform=transforms.image_transform_train,
+        target_transforms=target_transforms,
+        n_images=args.n_images,
+    )
+    val_loader = torch.utils.data.DataLoader(
+        val_data, batch_size=args.batch_size, shuffle=False,
+        pin_memory=args.pin_memory, num_workers=args.loader_workers, drop_last=True)
 
-# === aug_flip ===
-params_transform['flip_prob'] = 0.5
+    return train_loader, val_loader, train_data, val_data
 
-params_transform['np'] = 56
-params_transform['sigma'] = 7.0
-params_transform['limb_width'] = 1.
+def cli():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    train_cli(parser)
+    parser.add_argument('-o', '--output', default=None,
+                        help='output file')
+    parser.add_argument('--stride-apply', default=1, type=int,
+                        help='apply and reset gradients every n batches')
+    parser.add_argument('--epochs', default=75, type=int,
+                        help='number of epochs to train')
+    parser.add_argument('--freeze-base', default=0, type=int,
+                        help='number of epochs to train with frozen base')
+    parser.add_argument('--pre-lr', type=float, default=1e-4,
+                        help='pre learning rate')
+    parser.add_argument('--update-batchnorm-runningstatistics',
+                        default=False, action='store_true',
+                        help='update batch norm running statistics')
+    parser.add_argument('--square-edge', default=368, type=int,
+                        help='square edge of input images')
+    parser.add_argument('--ema', default=1e-3, type=float,
+                        help='ema decay constant')
+    parser.add_argument('--debug-without-plots', default=False, action='store_true',
+                        help='enable debug but dont plot')
+    parser.add_argument('--profile', default=None,
+                        help='enables profiling. specify path for chrome tracing file')
+    parser.add_argument('--disable-cuda', action='store_true',
+                        help='disable CUDA')
+    parser.add_argument('--model_path', default='./network/weight/', type=str, metavar='DIR',
+                    help='path to where the model saved')                         
+    args = parser.parse_args()
+
+    # add args.device
+    args.device = torch.device('cpu')
+    args.pin_memory = False
+    if not args.disable_cuda and torch.cuda.is_available():
+        args.device = torch.device('cuda')
+        args.pin_memory = True
+
+    return args
+
+args = cli()
+
+print("Loading dataset...")
+# load train data
+preprocess = transforms.Compose([
+        transforms.Normalize(),
+        transforms.RandomApply(transforms.HFlip(), 0.5),
+        transforms.RescaleRelative(),
+        transforms.Crop(args.square_edge),
+        transforms.CenterPad(args.square_edge),
+    ])
+train_loader, val_loader, train_data, val_data = train_factory(args, preprocess, target_transforms=None)
+
 
 def build_names():
     names = []
@@ -83,27 +142,23 @@ def build_names():
     return names
 
 
-def get_loss(saved_for_loss, heat_temp, heat_weight,
-               vec_temp, vec_weight):
+def get_loss(saved_for_loss, heat_temp, vec_temp):
 
     names = build_names()
     saved_for_log = OrderedDict()
-    criterion = nn.MSELoss(size_average=True).cuda()
-    #criterion = encoding.nn.DataParallelCriterion(criterion, device_ids=args.gpu_ids)
+    criterion = nn.MSELoss(reduction='mean').cuda()
     total_loss = 0
 
     for j in range(6):
-        pred1 = saved_for_loss[2 * j] * vec_weight
+        pred1 = saved_for_loss[2 * j]
         """
         print("pred1 sizes")
         print(saved_for_loss[2*j].data.size())
         print(vec_weight.data.size())
         print(vec_temp.data.size())
         """
-        gt1 = vec_temp * vec_weight
 
-        pred2 = saved_for_loss[2 * j + 1] * heat_weight
-        gt2 = heat_weight * heat_temp
+        pred2 = saved_for_loss[2 * j + 1] 
         """
         print("pred2 sizes")
         print(saved_for_loss[2*j+1].data.size())
@@ -112,8 +167,8 @@ def get_loss(saved_for_loss, heat_temp, heat_weight,
         """
 
         # Compute losses
-        loss1 = criterion(pred1, gt1)
-        loss2 = criterion(pred2, gt2) 
+        loss1 = criterion(pred1, vec_temp)
+        loss2 = criterion(pred2, heat_temp) 
 
         total_loss += loss1
         total_loss += loss2
@@ -151,7 +206,7 @@ def train(train_loader, model, optimizer, epoch):
     model.train()
 
     end = time.time()
-    for i, (img, heatmap_target, heat_mask, paf_target, paf_mask) in enumerate(train_loader):
+    for i, (img, heatmap_target, paf_target) in enumerate(train_loader):
         # measure data loading time
         #writer.add_text('Text', 'text logged at step:' + str(i), i)
         
@@ -161,15 +216,12 @@ def train(train_loader, model, optimizer, epoch):
 
         img = img.cuda()
         heatmap_target = heatmap_target.cuda()
-        heat_mask = heat_mask.cuda()
         paf_target = paf_target.cuda()
-        paf_mask = paf_mask.cuda()
         
         # compute output
         _,saved_for_loss = model(img)
         
-        total_loss, saved_for_log = get_loss(saved_for_loss, heatmap_target, heat_mask,
-               paf_target, paf_mask)
+        total_loss, saved_for_log = get_loss(saved_for_loss, heatmap_target, paf_target)
         
         for name,_ in meter_dict.items():
             meter_dict[name].update(saved_for_log[name], img.size(0))
@@ -261,27 +313,12 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
-
-print("Loading dataset...")
-# load data
-train_data = get_loader(args.json_path, args.data_dir,
-                        args.mask_dir, 368, 8,
-                        'vgg', args.batch_size, params_transform = params_transform, 
-                        shuffle=True, training=True, num_workers=8)
-print('train dataset len: {}'.format(len(train_data.dataset)))
-
-# validation data
-valid_data = get_loader(args.json_path, args.data_dir, args.mask_dir, 368,
-                            8, preprocess='vgg', training=False,
-                            batch_size=args.batch_size, params_transform = params_transform, shuffle=False, num_workers=4)
-print('val dataset len: {}'.format(len(valid_data.dataset)))
-
 # model
 model = get_model(trunk='vgg19')
 #model = encoding.nn.DataParallelModel(model, device_ids=args.gpu_ids)
 model = torch.nn.DataParallel(model).cuda()
 # load pretrained
-use_vgg(model, args.model_path, 'vgg19')
+#use_vgg(model, args.model_path, 'vgg19')
 
 
 # Fix the VGG weights first, and then the weights will be released
@@ -293,16 +330,14 @@ trainable_vars = [param for param in model.parameters() if param.requires_grad]
 optimizer = torch.optim.SGD(trainable_vars, lr=args.lr,
                            momentum=args.momentum,
                            weight_decay=args.weight_decay,
-                           nesterov=args.nesterov)
- 
-writer = SummaryWriter(log_dir=args.logdir)       
+                           nesterov=args.nesterov)     
                                                                                           
 for epoch in range(5):
     # train for one epoch
-    train_loss = train(train_data, model, optimizer, epoch)
+    train_loss = train(train_loader, model, optimizer, epoch)
 
     # evaluate on validation set
-    val_loss = validate(valid_data, model, epoch)  
+    val_loss = validate(valid_loader, model, epoch)  
                                  
     writer.add_scalars('data/scalar_group', {'train loss': train_loss,
                                              'val loss': val_loss}, epoch)            
@@ -328,16 +363,12 @@ for epoch in range(5, args.epochs):
     train_loss = train(train_data, model, optimizer, epoch)
 
     # evaluate on validation set
-    val_loss = validate(valid_data, model, epoch)   
+    val_loss = validate(valid_loader, model, epoch)   
     
-    writer.add_scalars('data/scalar_group', {'train loss': train_loss,
-                                             'val loss': val_loss}, epoch)
     lr_scheduler.step(val_loss)                        
     
     is_best = val_loss<best_val_loss
     best_val_loss = min(val_loss, best_val_loss)
     if is_best:
         torch.save(model.state_dict(), model_save_filename)      
-        
-writer.export_scalars_to_json(os.path.join(args.model_path,"tensorboard/all_scalars.json"))
-writer.close()    
+          
