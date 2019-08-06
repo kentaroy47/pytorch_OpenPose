@@ -34,7 +34,7 @@ c
 
 
 ## Training
-- `cd training; bash getData.sh` to obtain the COCO images in `*/images/`, keypoints annotations in `*/annotations/`
+- `cd training; bash getData.sh` to obtain the COCO 2017 images in `*/images/`, keypoints annotations in `*/annotations/`
 - Modify the data directory in `train_VGG19.py` and `python train_VGG19.py`
 - `python train_ShuffleNetV2.py --batch_size 160 --logdir {where to store tensorboardX logs}`
 - `python train_SH.py --batch_size 64 --lr 0.1 --logdir {where to store tensorboardX logs}`
