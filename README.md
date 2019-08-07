@@ -56,7 +56,7 @@ ${DATA_ROOT}
         
 
 ```
-- Modify the data directory in `train_VGG19.py` and `python train_VGG19.py`
+- Modify the data directory in `train/train_VGG19.py` and `python train/train_VGG19.py`
 - `python train_ShuffleNetV2.py --batch_size 160 --logdir {where to store tensorboardX logs}`
 - `python train_SH.py --batch_size 64 --lr 0.1 --logdir {where to store tensorboardX logs}`
 ## Related repository

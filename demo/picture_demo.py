@@ -21,7 +21,7 @@ from training.datasets.coco_data.preprocessing import (inception_preprocess,
                                               ssd_preprocess, vgg_preprocess)
 from network import im_transform
 from evaluate.coco_eval import get_multiplier, get_outputs, handle_paf_and_heat
-from utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender
+from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender
 from pafprocess import pafprocess
 from scipy.ndimage.filters import gaussian_filter, maximum_filter
 from scipy.ndimage.morphology import generate_binary_structure

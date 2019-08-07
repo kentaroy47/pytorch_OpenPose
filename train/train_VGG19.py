@@ -8,8 +8,9 @@ import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from network.rtpose_vgg import get_model, use_vgg
-from datasets import coco, transforms, datasets
+from lib.network.rtpose_vgg import get_model, use_vgg
+from lib.datasets import coco, transforms, datasets
+from lib.config import update_config
 
 DATA_DIR = '/home/tensorboy/data/coco'
 
@@ -44,6 +45,7 @@ def train_cli(parser):
     group.add_argument('--nesterov', dest='nesterov', default=True, type=bool)     
     group.add_argument('--print_freq', default=20, type=int, metavar='N',
                     help='number of iterations to print the training statistics')    
+                   
                                          
 def train_factory(args, preprocess, target_transforms):
     train_datas = [datasets.CocoKeypoints(
@@ -54,7 +56,6 @@ def train_factory(args, preprocess, target_transforms):
         target_transforms=target_transforms,
         n_images=args.n_images,
     ) for item in args.train_annotations]
-
 
     train_data = torch.utils.data.ConcatDataset(train_datas)
     
@@ -101,10 +102,8 @@ def cli():
                         help='ema decay constant')
     parser.add_argument('--debug-without-plots', default=False, action='store_true',
                         help='enable debug but dont plot')
-    parser.add_argument('--profile', default=None,
-                        help='enables profiling. specify path for chrome tracing file')
     parser.add_argument('--disable-cuda', action='store_true',
-                        help='disable CUDA')
+                        help='disable CUDA')                        
     parser.add_argument('--model_path', default='./network/weight/', type=str, metavar='DIR',
                     help='path to where the model saved')                         
     args = parser.parse_args()
@@ -115,7 +114,7 @@ def cli():
     if not args.disable_cuda and torch.cuda.is_available():
         args.device = torch.device('cuda')
         args.pin_memory = True
-
+        
     return args
 
 args = cli()
@@ -188,7 +187,6 @@ def train(train_loader, model, optimizer, epoch):
     meter_dict['max_paf'] = AverageMeter()    
     meter_dict['min_paf'] = AverageMeter()
     
-    
     # switch to train mode
     model.train()
 
@@ -230,6 +228,7 @@ def train(train_loader, model, optimizer, epoch):
                 print_string+='{name}: {loss.val:.4f} ({loss.avg:.4f})\t'.format(name=name, loss=value)
             print(print_string)
     return losses.avg  
+        
         
 def validate(val_loader, model, epoch):
     batch_time = AverageMeter()
