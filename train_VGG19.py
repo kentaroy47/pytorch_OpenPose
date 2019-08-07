@@ -261,15 +261,12 @@ def validate(val_loader, model, epoch):
     model.eval()
 
     end = time.time()
-    for i, (img, heatmap_target, heat_mask, paf_target, paf_mask) in enumerate(val_loader):
+    for i, (img, heatmap_target, paf_target) in enumerate(val_loader):
         # measure data loading time
         data_time.update(time.time() - end)
-
         img = img.cuda()
         heatmap_target = heatmap_target.cuda()
-        heat_mask = heat_mask.cuda()
         paf_target = paf_target.cuda()
-        paf_mask = paf_mask.cuda()
         
         # compute output
         _,saved_for_loss = model(img)
