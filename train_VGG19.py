@@ -150,20 +150,8 @@ def get_loss(saved_for_loss, heat_temp, vec_temp):
 
     for j in range(6):
         pred1 = saved_for_loss[2 * j]
-        """
-        print("pred1 sizes")
-        print(saved_for_loss[2*j].data.size())
-        print(vec_weight.data.size())
-        print(vec_temp.data.size())
-        """
-
         pred2 = saved_for_loss[2 * j + 1] 
-        """
-        print("pred2 sizes")
-        print(saved_for_loss[2*j+1].data.size())
-        print(heat_weight.data.size())
-        print(heat_temp.data.size())
-        """
+
 
         # Compute losses
         loss1 = criterion(pred1, vec_temp)
@@ -216,10 +204,6 @@ def train(train_loader, model, optimizer, epoch):
         img = img.cuda()
         heatmap_target = heatmap_target.cuda()
         paf_target = paf_target.cuda()
-        print(img.shape)
-        print(heatmap_target.shape)
-        print(paf_target.shape)
-        
         # compute output
         _,saved_for_loss = model(img)
         
