@@ -232,32 +232,16 @@ def get_model(trunk='vgg19'):
 """
 
 
-def use_vgg(model, model_path, trunk):
-    model_urls = {
-        'vgg16': 'https://download.pytorch.org/models/vgg16-397923af.pth',
-        'ssd': 'https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth',
-        'vgg19': 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'}
+def use_vgg(model):
 
-    number_weight = {
-        'vgg16': 18,
-        'ssd': 18,
-        'vgg19': 20}
-
-    url = model_urls[trunk]
-
-    if trunk == 'ssd':
-        urllib.urlretrieve('https://s3.amazonaws.com/amdegroot-models/ssd300_mAP_77.43_v2.pth',
-                           os.path.join(model_path, 'ssd.pth'))
-        vgg_state_dict = torch.load(os.path.join(model_path, 'ssd.pth'))
-        print('loading SSD')
-    else:
-        vgg_state_dict = model_zoo.load_url(url, model_dir=model_path)
+    url = 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'
+    vgg_state_dict = model_zoo.load_url(url)
     vgg_keys = vgg_state_dict.keys()
 
     # load weights of vgg
     weights_load = {}
     # weight+bias,weight+bias.....(repeat 10 times)
-    for i in range(number_weight[trunk]):
+    for i in range(20):
         weights_load[list(model.state_dict().keys())[i]
                      ] = vgg_state_dict[list(vgg_keys)[i]]
 
