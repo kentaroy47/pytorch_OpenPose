@@ -334,9 +334,7 @@ for epoch in range(5):
 
     # evaluate on validation set
     val_loss = validate(val_loader, model, epoch)  
-                                 
-    writer.add_scalars('data/scalar_group', {'train loss': train_loss,
-                                             'val loss': val_loss}, epoch)            
+                                            
 # Release all weights                                   
 for param in model.module.parameters():
     param.requires_grad = True
