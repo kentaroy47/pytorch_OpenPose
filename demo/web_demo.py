@@ -14,19 +14,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from collections import OrderedDict
-from config_reader import config_reader
-from scipy.ndimage.filters import gaussian_filter
-from network.rtpose_vgg import get_model
-from network.post import decode_pose
-from training.datasets.coco_data.preprocessing import (inception_preprocess,
-                                              rtpose_preprocess,
-                                              ssd_preprocess, vgg_preprocess)
-from network import im_transform
-from evaluate.coco_eval import get_multiplier, get_outputs
-from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender
-from pafprocess import pafprocess
-from scipy.ndimage.filters import gaussian_filter, maximum_filter
 from scipy.ndimage.morphology import generate_binary_structure
+from scipy.ndimage.filters import gaussian_filter, maximum_filter
+
+from lib.network.rtpose_vgg import get_model
+from lib.network import im_transform
+from lib.evaluate.coco_eval import get_multiplier, get_outputs, handle_paf_and_heat
+from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender
+from lib.pafprocess import pafprocess
 
 def find_peaks(img):
     """
