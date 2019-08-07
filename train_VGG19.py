@@ -271,8 +271,7 @@ def validate(val_loader, model, epoch):
         # compute output
         _,saved_for_loss = model(img)
         
-        total_loss, saved_for_log = get_loss(saved_for_loss, heatmap_target, heat_mask,
-               paf_target, paf_mask)
+        total_loss, saved_for_log = get_loss(saved_for_loss, heatmap_target, paf_target)
                
         #for name,_ in meter_dict.items():
         #    meter_dict[name].update(saved_for_log[name], img.size(0))
