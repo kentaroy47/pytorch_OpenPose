@@ -248,4 +248,4 @@ def use_vgg(model):
     state = model.state_dict()
     state.update(weights_load)
     model.load_state_dict(state)
-    print('load imagenet pretrained model: {}'.format(model_path))
+    print('load imagenet pretrained model')
