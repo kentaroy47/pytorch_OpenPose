@@ -8,16 +8,15 @@ import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-#import encoding
 from network.rtpose_vgg import get_model, use_vgg
 from datasets import coco, transforms, datasets
 
-ANNOTATIONS_DIR = '/home/tensorboy/data/coco/annotations/'
+DATA_DIR = '/home/tensorboy/data/coco'
 
-ANNOTATIONS_TRAIN = [os.path.join(ANNOTATIONS_DIR, item) for item in ['person_keypoints_train2017.json']]
-ANNOTATIONS_VAL = os.path.join(ANNOTATIONS_DIR, 'person_keypoints_val2017.json')
-IMAGE_DIR_TRAIN = '/home/tensorboy/data/coco/images/train2017'
-IMAGE_DIR_VAL = '/home/tensorboy/data/coco/images/val2017'
+ANNOTATIONS_TRAIN = [os.path.join(DATA_DIR, 'annotations', item) for item in ['person_keypoints_train2017.json']]
+ANNOTATIONS_VAL = os.path.join(DATA_DIR, 'annotations', 'person_keypoints_val2017.json')
+IMAGE_DIR_TRAIN = os.path.join(DATA_DIR, 'images/train2017')
+IMAGE_DIR_VAL = os.path.join(DATA_DIR, 'images/val2017')
 
 
 def train_cli(parser):
@@ -217,6 +216,9 @@ def train(train_loader, model, optimizer, epoch):
         img = img.cuda()
         heatmap_target = heatmap_target.cuda()
         paf_target = paf_target.cuda()
+        print(img.shape)
+        print(heatmap_target.shape)
+        print(paf_target.shape)
         
         # compute output
         _,saved_for_loss = model(img)
@@ -311,7 +313,6 @@ class AverageMeter(object):
 
 # model
 model = get_model(trunk='vgg19')
-#model = encoding.nn.DataParallelModel(model, device_ids=args.gpu_ids)
 model = torch.nn.DataParallel(model).cuda()
 # load pretrained
 #use_vgg(model, args.model_path, 'vgg19')
@@ -354,7 +355,7 @@ model_save_filename = './network/weight/best_pose.pth'
 for epoch in range(5, args.epochs):
 
     # train for one epoch
-    train_loss = train(train_data, model, optimizer, epoch)
+    train_loss = train(train_loader, model, optimizer, epoch)
 
     # evaluate on validation set
     val_loss = validate(val_loader, model, epoch)   
