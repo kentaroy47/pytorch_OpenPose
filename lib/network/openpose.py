@@ -209,17 +209,20 @@ class OpenPose_Model(nn.Module):
                 m.weight = torch.nn.Parameter(torch.Tensor(weights[idx]['weights'][0]))
 
     
-def use_vgg(model, model_path):
-    vgg_state_dict = model_zoo.load_url('https://download.pytorch.org/models/vgg19-dcbb9e9d.pth', model_path)
+def use_vgg(model):
+
+    url = 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth'
+    vgg_state_dict = model_zoo.load_url(url)
     vgg_keys = vgg_state_dict.keys()
+
     # load weights of vgg
     weights_load = {}
     # weight+bias,weight+bias.....(repeat 10 times)
     for i in range(20):
         weights_load[list(model.state_dict().keys())[i]
                      ] = vgg_state_dict[list(vgg_keys)[i]]
+
     state = model.state_dict()
     state.update(weights_load)
     model.load_state_dict(state)
-    print('Model sucessfully loaded!')
-    return model
+    print('load imagenet pretrained model')
