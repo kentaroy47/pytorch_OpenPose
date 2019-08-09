@@ -284,7 +284,7 @@ checkpoint = ModelCheckpoint(
 trainer = Trainer(experiment=exp, \
                   max_nb_epochs=100, \
                   gpus=[0, 1, 2, 3], \
-                  checkpoint_callback=checkpoint),
+                  checkpoint_callback=checkpoint,
                   early_stop_callback=early_stop)
 
 trainer.fit(model)
