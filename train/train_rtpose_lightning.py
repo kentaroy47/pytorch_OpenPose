@@ -167,9 +167,7 @@ class rtpose_lightning(pl.LightningModule):
         loss_dict['max_heatmap'] = torch.max(pred2.data[:, :-1, :, :]).unsqueeze(0)
         loss_dict['min_heatmap'] = torch.min(pred2.data[:, :-1, :, :]).unsqueeze(0)
         loss_dict['max_paf'] = torch.max(pred1.data).unsqueeze(0)
-        loss_dict['min_paf'] = torch.min(pred1.data).unsqueeze(0)
-
-        
+        loss_dict['min_paf'] = torch.min(pred1.data).unsqueeze(0)      
         output = {
             'loss': total_loss, # required
             'prog': loss_dict # optional
