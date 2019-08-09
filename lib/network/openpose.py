@@ -185,8 +185,6 @@ class OpenPose_Model(nn.Module):
             elif isinstance(m, nn.PReLU):
                 init.normal_(m.weight, std=0.01)
                 
-
-        return total_loss, saved_for_log
             
     def init_w_pretrained_weights(self, pkl_weights='/home/tomas/Desktop/AIFI/internal-repos/aifi-pose/network/weights/openpose/openpose.pkl'):
         with open(pkl_weights, 'rb') as f:
