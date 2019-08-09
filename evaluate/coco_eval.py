@@ -52,7 +52,7 @@ def eval_coco(outputs, annFile, imgIds):
     cocoDt = cocoGt.loadRes('results.json')  # load model outputs
 
     # running evaluation
-    cocoEval = COCOeval(cocoGt, cocoDt, annType='keypoints')
+    cocoEval = COCOeval(cocoGt, cocoDt, 'keypoints')
     cocoEval.params.imgIds = imgIds
     cocoEval.evaluate()
     cocoEval.accumulate()
