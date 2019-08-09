@@ -209,9 +209,9 @@ class rtpose_lightning(pl.LightningModule):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         output_dict['avg_val_loss'] = avg_loss
         
-        #for j in range(6):
-        #    output_dict[names[2 * j]] = torch.stack([x[names[2 * j]] for x in outputs]).mean()
-        #    output_dict[names[2 * j + 1]] = torch.stack([x[names[2 * j + 1]] for x in outputs]).mean()           
+        for j in range(6):
+            output_dict[names[2 * j]] = torch.stack([x[names[2 * j]] for x in outputs]).mean()
+            output_dict[names[2 * j + 1]] = torch.stack([x[names[2 * j + 1]] for x in outputs]).mean()           
             
         return output_dict
 
