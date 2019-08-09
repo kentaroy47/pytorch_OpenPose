@@ -129,21 +129,12 @@ class rtpose_lightning(pl.LightningModule):
 
     def l2_loss(self, y_hat, y):
         return F.mse_loss(y_hat, y, reduction='mean')
-
-    def build_names(self):
-        names = []
-
-        for j in range(1, 7):
-            for k in range(1, 3):
-                names.append('loss_stage%d_L%d' % (j, k))
-        return names
         
     def training_step(self, batch, batch_nb):
     
         img, heatmap_target, paf_target = batch
         saved_for_loss = self.forward(img)
         
-        names = self.build_names()
         loss_dict = OrderedDict()
         total_loss = 0
         for j in range(6):
@@ -159,17 +150,17 @@ class rtpose_lightning(pl.LightningModule):
             total_loss += loss2
 
             # Get value from Variable and save for log
-            loss_dict[names[2 * j]] = loss1.unsqueeze(0)
-            loss_dict[names[2 * j + 1]] = loss2.unsqueeze(0)       
+            loss_dict['paf'] = loss1.unsqueeze(0)
+            loss_dict['heatmap'] = loss2.unsqueeze(0)       
 
-        loss_dict['loss'] = total_loss            
+        loss_dict['loss'] = total_loss.unsqueeze(0)            
               
         loss_dict['max_heatmap'] = torch.max(pred2.data[:, :-1, :, :]).unsqueeze(0)
         loss_dict['min_heatmap'] = torch.min(pred2.data[:, :-1, :, :]).unsqueeze(0)
         loss_dict['max_paf'] = torch.max(pred1.data).unsqueeze(0)
         loss_dict['min_paf'] = torch.min(pred1.data).unsqueeze(0)      
         output = {
-            'loss': total_loss, # required
+            'loss': total_loss.unsqueeze(0), # required
             'prog': loss_dict # optional
         }        
         return output
@@ -178,7 +169,6 @@ class rtpose_lightning(pl.LightningModule):
         img, heatmap_target, paf_target = batch
         saved_for_loss = self.forward(img)
         
-        names = self.build_names()
         loss_dict = OrderedDict()
         total_loss = 0
         for j in range(6):
@@ -194,22 +184,17 @@ class rtpose_lightning(pl.LightningModule):
             total_loss += loss2
 
             # Get value from Variable and save for log
-            loss_dict[names[2 * j]] = loss1
-            loss_dict[names[2 * j + 1]] = loss2       
+            loss_dict['paf'] = loss1.unsqueeze(0)
+            loss_dict['heatmap'] = loss2.unsqueeze(0)     
             
-        loss_dict['val_loss'] = total_loss
+        loss_dict['val_loss'] = total_loss.unsqueeze(0)   
         return loss_dict
         
     def validation_end(self, outputs):
-        output_dict = OrderedDict()
-        names = self.build_names()        
+        output_dict = OrderedDict()       
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         output_dict['avg_val_loss'] = avg_loss
-        
-        for j in range(6):
-            output_dict[names[2 * j]] = torch.stack([x[names[2 * j]] for x in outputs]).mean()
-            output_dict[names[2 * j + 1]] = torch.stack([x[names[2 * j + 1]] for x in outputs]).mean()           
-            
+      
         return output_dict
 
     def configure_optimizers(self):
@@ -299,8 +284,8 @@ checkpoint = ModelCheckpoint(
 trainer = Trainer(experiment=exp, \
                   max_nb_epochs=100, \
                   gpus=[0, 1, 2, 3], \
-                  checkpoint_callback=checkpoint, \
-                  early_stop_callback=early_stop)
+                  checkpoint_callback=checkpoint)#, \
+                  #early_stop_callback)
 
 trainer.fit(model)
           
