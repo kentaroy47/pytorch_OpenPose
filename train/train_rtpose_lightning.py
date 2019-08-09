@@ -172,7 +172,7 @@ class rtpose_lightning(pl.LightningModule):
         
         output = {
             'loss': total_loss, # required
-            'prog': loss_dict # optional
+        #    'prog': loss_dict # optional
         }        
         return output
 
