@@ -12,7 +12,6 @@
 ## Require
 1. [Pytorch](http://pytorch.org/)
 3. pip install pycocotools
-4. pip install tensorboardX
 
 
 ## Demo

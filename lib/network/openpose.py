@@ -185,43 +185,6 @@ class OpenPose_Model(nn.Module):
             elif isinstance(m, nn.PReLU):
                 init.normal_(m.weight, std=0.01)
                 
-    @staticmethod
-    def build_loss(saved_for_loss, heat_temp, heat_weight,
-                   vec_temp, vec_weight, batch_size, gpus):
-
-        names = build_names()
-        saved_for_log = OrderedDict()
-        criterion = nn.MSELoss(size_average=True).cuda()
-        total_loss = 0
-        #paf
-        l2_stages=4
-        #heatmap
-        l1_stages=2
-        
-        for j in range(l2_stages):
-        
-            pred1 = saved_for_loss[0][j] * vec_weight
-            gt1 = vec_temp * vec_weight            
-            loss1 = criterion(pred1, gt1) 
-            total_loss += loss1
-
-            saved_for_log[names[0][j]] = loss1.data[0]
-                                                
-        for j in range(l1_stages):
-        
-            pred2 = saved_for_loss[1][j] * heat_weight 
-            gt2 = heat_weight * heat_temp
-            loss2 = criterion(pred2, gt2)  
-                      
-            total_loss += loss2                        
-            saved_for_log[names[1][j]] = loss2.data[0]
-
-        saved_for_log['max_ht'] = torch.max(
-            saved_for_loss[1][-1].data[:, 0:-1, :, :])
-        saved_for_log['min_ht'] = torch.min(
-            saved_for_loss[1][-1].data[:, 0:-1, :, :])
-        saved_for_log['max_paf'] = torch.max(saved_for_loss[0][-2].data)
-        saved_for_log['min_paf'] = torch.min(saved_for_loss[0][-2].data)
 
         return total_loss, saved_for_log
             
@@ -247,23 +210,6 @@ class OpenPose_Model(nn.Module):
                 idx = next(prelu_idxs)
                 m.weight = torch.nn.Parameter(torch.Tensor(weights[idx]['weights'][0]))
 
-def build_names():
-    #paf
-    l2_stages=4
-    #heatmap
-    l1_stages=2
-    names = []
-
-    name1 = []
-    for j in range(1, 5):
-        name1.append('loss_stages_paf_%d'%j)
-    
-    name2 = []
-    for j in range(1, 3):
-        name2.append('loss_stages_heatmap_%d'%j)
-    
-    names = [name1,name2]
-    return names
     
 def use_vgg(model, model_path):
     vgg_state_dict = model_zoo.load_url('https://download.pytorch.org/models/vgg19-dcbb9e9d.pth', model_path)
