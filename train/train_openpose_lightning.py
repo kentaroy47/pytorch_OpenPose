@@ -268,7 +268,7 @@ checkpoint = ModelCheckpoint(
 
 trainer = Trainer(experiment=exp, \
                   max_nb_epochs=100, \
-                  gpus=[0, 1, 2, 3], \
+                  gpus=[3,4,5,6], \
                   checkpoint_callback=checkpoint,
                   early_stop_callback=early_stop)
 
