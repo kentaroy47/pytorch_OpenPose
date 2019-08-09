@@ -27,9 +27,9 @@ c
 ### Pretrained Models & Performance on the dataset split by the rtpose.
 [rtpose](https://www.dropbox.com/s/ae071mfm2qoyc8v/pose_model.pth?dl=0), [trained from scratch](https://www.dropbox.com/s/5v654d2u65fuvyr/pose_model_scratch.pth?dl=0) (Notice the preprocessing is different for different models)
 
-|   Reported on paper (VGG19)| mAP in this repo (VGG19)| Trained from scratch in this repo| 
-|  :------:     | :---------: | :---------: |
-|   0.577      | 0.598     |  **0.614** |
+| mAP of original rtpose| Trained from scratch in this repo| 
+| :---------: | :---------: |
+| 0.653     |  - |
 
 
 ## Training
