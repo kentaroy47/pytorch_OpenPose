@@ -11,7 +11,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.optim.lr_scheduler as lr_scheduler
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
-from pytorch_lightning.utils.pt_callbacks import ModelCheckpoint, EarlyStopping
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from test_tube import Experiment
 
 from lib.network.rtpose_vgg import get_model, use_vgg
@@ -162,9 +162,19 @@ class rtpose_lightning(pl.LightningModule):
             loss_dict[names[2 * j]] = loss1
             loss_dict[names[2 * j + 1]] = loss2       
             
-        loss_dict['loss'] = total_loss
+        loss_dict['tng_loss'] = total_loss
+        loss_dict['batch_nb'] = batch_nb
         
-        return loss_dict
+        loss_dict['max_heatmap'] = torch.max(pred2.data[:, :-1, :, :]).item()
+        loss_dict['min_heatmap'] = torch.min(pred2.data[:, :-1, :, :]).item()
+        loss_dict['max_paf'] = torch.max(l(pred2.data).item()
+        loss_dict['min_paf'] = torch.min((pred2.data).item()
+        
+        output = {
+            'loss': total_loss, # required
+            'prog': loss_dict # optional
+        }        
+        return output
 
     def validation_step(self, batch, batch_nb):
         img, heatmap_target, paf_target = batch
@@ -193,8 +203,16 @@ class rtpose_lightning(pl.LightningModule):
         return loss_dict
         
     def validation_end(self, outputs):
+        output_dict = OrderedDict()
+        names = self.build_names()        
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        return {'avg_val_loss': avg_loss}
+        output_dict['avg_val_loss'] = avg_loss
+        
+        for j in range(6):
+            output_dict[names[2 * j]] = torch.stack([x[names[2 * j]] for x in outputs]).mean()
+            output_dict[names[2 * j + 1]] = torch.stack([x[names[2 * j + 1]] for x in outputs]).mean()           
+            
+        return output_dict
 
     def configure_optimizers(self):
     
@@ -274,7 +292,6 @@ early_stop = EarlyStopping(
 model_save_path = '{}/{}/{}'.format(args.log_dir, exp.name, exp.version)
 checkpoint = ModelCheckpoint(
     filepath=model_save_path,
-    save_function=None,
     save_best_only=True,
     verbose=True,
     monitor='val_loss',
