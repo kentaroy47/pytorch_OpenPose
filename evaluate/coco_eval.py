@@ -12,8 +12,8 @@ import torch
 from lib.datasets.preprocessing import (inception_preprocess,
                                               rtpose_preprocess,
                                               ssd_preprocess, vgg_preprocess)
-from network.post import decode_pose
-from network import im_transform
+from lib.network.post import decode_pose
+from lib.network import im_transform
 
 '''
 MS COCO annotation order:
@@ -39,7 +39,7 @@ MID_2 = [8, 9, 10, 11, 12, 13, 2, 3, 4,
          16, 5, 6, 7, 17, 0, 14, 15, 16, 17]
 
 
-def eval_coco(outputs, dataDir, imgIds):
+def eval_coco(outputs, annFile, imgIds):
     """Evaluate images on Coco test set
     :param outputs: list of dictionaries, the models' processed outputs
     :param dataDir: string, path to the MSCOCO data directory
@@ -48,17 +48,11 @@ def eval_coco(outputs, dataDir, imgIds):
     """
     with open('results.json', 'w') as f:
         json.dump(outputs, f)  
-    annType = 'keypoints'
-    prefix = 'person_keypoints'
-
-    # initialize COCO ground truth api
-    dataType = 'val2014'
-    annFile = '%s/annotations/%s_%s.json' % (dataDir, prefix, dataType)
     cocoGt = COCO(annFile)  # load annotations
     cocoDt = cocoGt.loadRes('results.json')  # load model outputs
 
     # running evaluation
-    cocoEval = COCOeval(cocoGt, cocoDt, annType)
+    cocoEval = COCOeval(cocoGt, cocoDt, annType='keypoints')
     cocoEval.params.imgIds = imgIds
     cocoEval.evaluate()
     cocoEval.accumulate()
@@ -73,23 +67,8 @@ def get_multiplier(img):
     :param img: numpy array, the current image
     :returns : list of float. The computed scales
     """
-    scale_search = [0.5, 1., 1.5, 2, 2.5]
+    scale_search = [0.5, 1., 1.5, 2.]
     return [x * 368. / float(img.shape[0]) for x in scale_search]
-
-
-def get_coco_val(file_path):
-    """Reads MSCOCO validation informatio
-    :param file_path: string, the path to the MSCOCO validation file
-    :returns : list of image ids, list of image file paths, list of widths,
-               list of heights
-    """
-    val_coco = pd.read_csv(file_path, sep='\s+', header=None)
-    image_ids = list(val_coco[1])
-    file_paths = list(val_coco[2])
-    heights = list(val_coco[3])
-    widths = list(val_coco[4])
-
-    return image_ids, file_paths, heights, widths
 
 
 def get_outputs(multiplier, img, model, preprocess):
@@ -255,15 +234,15 @@ def handle_paf_and_heat(normal_heat, flipped_heat, normal_paf, flipped_paf):
     return averaged_paf, averaged_heatmap
 
         
-def run_eval(image_dir, anno_dir, vis_dir, image_list_txt, model, preprocess):
+def run_eval(image_dir, anno_file, vis_dir, model, preprocess):
     """Run the evaluation on the test set and report mAP score
     :param model: the model to test
     :returns: float, the reported mAP score
-    """
-    # This txt file is fount in the caffe_rtpose repository:
-    # https://github.com/CMU-Perceptual-Computing-Lab/caffe_rtpose/blob/master
-    img_ids, img_paths, img_heights, img_widths = get_coco_val(
-        image_list_txt)
+    """   
+    coco = COCO(anno_file)
+    cat_ids = coco.getCatIds(catNms=['person'])    
+    img_ids = coco.getImgIds(catIds=cat_ids)
+
     # img_ids = img_ids[81:82]
     # img_paths = img_paths[81:82]
     print("Total number of validation images {}".format(len(img_ids)))
@@ -274,8 +253,11 @@ def run_eval(image_dir, anno_dir, vis_dir, image_list_txt, model, preprocess):
     for i in range(len(img_ids)):
         if i % 10 == 0 and i != 0:
             print("Processed {} images".format(i))
+        img = coco.loadImgs(img_ids[i])[0]
+        file_name = img['file_name']
+        file_path = os.path.join(image_dir, file_name)
 
-        oriImg = cv2.imread(os.path.join(image_dir, 'val2014/' + img_paths[i]))
+        oriImg = cv2.imread(file_path)
         # Get the shortest side of the image (either height or width)
         shape_dst = np.min(oriImg.shape[0:2])
 
@@ -299,13 +281,10 @@ def run_eval(image_dir, anno_dir, vis_dir, image_list_txt, model, preprocess):
         canvas, to_plot, candidate, subset = decode_pose(
             oriImg, param, heatmap, paf)
             
-        vis_path = os.path.join(vis_dir, img_paths[i])
+        vis_path = os.path.join(vis_dir, file_name)
         cv2.imwrite(vis_path, to_plot)
         # subset indicated how many peoples foun in this image.
         append_result(img_ids[i], subset, candidate, outputs)
 
-
-        # cv2.imshow('test', canvas)
-        # cv2.waitKey(0)
     # Eval and show the final result!
-    return eval_coco(outputs=outputs, dataDir=anno_dir, imgIds=img_ids)
+    return eval_coco(outputs=outputs, annFile=anno_file, imgIds=img_ids)
