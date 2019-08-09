@@ -266,7 +266,7 @@ exp = Experiment(save_dir=args.log_dir)
 
 # callbacks
 early_stop = EarlyStopping(
-    monitor='val_loss',
+    monitor='avg_val_loss',
     patience=3,
     verbose=True,
     mode='min'
@@ -277,15 +277,15 @@ checkpoint = ModelCheckpoint(
     filepath=model_save_path,
     save_best_only=True,
     verbose=True,
-    monitor='val_loss',
+    monitor='avg_val_loss',
     mode='min'
 )
 
 trainer = Trainer(experiment=exp, \
                   max_nb_epochs=100, \
                   gpus=[0, 1, 2, 3], \
-                  checkpoint_callback=checkpoint)#, \
-                  #early_stop_callback)
+                  checkpoint_callback=checkpoint),
+                  early_stop_callback=early_stop)
 
 trainer.fit(model)
           
