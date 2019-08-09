@@ -162,20 +162,20 @@ class rtpose_lightning(pl.LightningModule):
             loss_dict[names[2 * j]] = loss1
             loss_dict[names[2 * j + 1]] = loss2       
 
-        loss_dict['tng_loss'] = total_loss            
-        #loss_dict['tng_loss'] = total_loss
-        #loss_dict['batch_nb'] = batch_nb
+        loss_dict['loss'] = total_loss            
+        loss_dict['tng_loss'] = total_loss
+        loss_dict['batch_nb'] = batch_nb
         
-        loss_dict['max_heatmap'] = torch.max(pred2.data[:, :-1, :, :]).item()
-        loss_dict['min_heatmap'] = torch.min(pred2.data[:, :-1, :, :]).item()
-        loss_dict['max_paf'] = torch.max(pred1.data).item()
-        loss_dict['min_paf'] = torch.min(pred1.data).item()
+        loss_dict['max_heatmap'] = torch.max(pred2.data[:, :-1, :, :])
+        loss_dict['min_heatmap'] = torch.min(pred2.data[:, :-1, :, :])
+        loss_dict['max_paf'] = torch.max(pred1.data)
+        loss_dict['min_paf'] = torch.min(pred1.data)
         
-        #output = {
-        #    'loss': total_loss, # required
-        #    'prog': loss_dict # optional
-        #}        
-        return loss_dict
+        output = {
+            'loss': total_loss, # required
+            'prog': loss_dict # optional
+        }        
+        return output
 
     def validation_step(self, batch, batch_nb):
         img, heatmap_target, paf_target = batch
