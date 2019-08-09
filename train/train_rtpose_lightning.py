@@ -162,8 +162,8 @@ class rtpose_lightning(pl.LightningModule):
             loss_dict[names[2 * j]] = loss1
             loss_dict[names[2 * j + 1]] = loss2       
             
-        loss_dict['tng_loss'] = total_loss
-        loss_dict['batch_nb'] = batch_nb
+        #loss_dict['tng_loss'] = total_loss
+        #loss_dict['batch_nb'] = batch_nb
         
         #loss_dict['max_heatmap'] = torch.max(pred2.data[:, :-1, :, :]).item()
         #loss_dict['min_heatmap'] = torch.min(pred2.data[:, :-1, :, :]).item()
@@ -208,9 +208,9 @@ class rtpose_lightning(pl.LightningModule):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         output_dict['avg_val_loss'] = avg_loss
         
-        for j in range(6):
-            output_dict[names[2 * j]] = torch.stack([x[names[2 * j]] for x in outputs]).mean()
-            output_dict[names[2 * j + 1]] = torch.stack([x[names[2 * j + 1]] for x in outputs]).mean()           
+        #for j in range(6):
+        #    output_dict[names[2 * j]] = torch.stack([x[names[2 * j]] for x in outputs]).mean()
+        #    output_dict[names[2 * j + 1]] = torch.stack([x[names[2 * j + 1]] for x in outputs]).mean()           
             
         return output_dict
 
