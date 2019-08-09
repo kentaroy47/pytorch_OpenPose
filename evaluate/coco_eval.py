@@ -9,7 +9,7 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
 import torch
-from lib.datasets.coco_data.preprocessing import (inception_preprocess,
+from lib.datasets.preprocessing import (inception_preprocess,
                                               rtpose_preprocess,
                                               ssd_preprocess, vgg_preprocess)
 from network.post import decode_pose
