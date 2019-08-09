@@ -134,7 +134,7 @@ class rtpose_lightning(pl.LightningModule):
         for j in range(l2_stages):
         
             pred1 = saved_for_loss[0][j]         
-            loss1 = F.mse_loss((pred1, paf_target, reduction='mean')
+            loss1 = F.mse_loss(pred1, paf_target, reduction='mean')
             total_loss += loss1
 
         for j in range(l1_stages):
