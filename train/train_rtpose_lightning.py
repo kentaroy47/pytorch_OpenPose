@@ -34,7 +34,6 @@ def parse_args():
     parser.add_argument('--cfg',
                         help='experiment configure file name',
                         default = 'experiments/vgg19_368x368_sgd_lr1.yaml',
-                        #required=True,
                         type=str)    
     parser.add_argument('opts',
                         help="Modify config options using the command-line",
@@ -60,20 +59,7 @@ def parse_args():
     parser.add_argument('--modelDir', default='./network/weight/', type=str, metavar='DIR',
                     help='path to where the model saved')   
     parser.add_argument('--dataDir', default='./network/weight/', type=str, metavar='DIR',
-                    help='path to where the model saved')                               
-    parser.add_argument('--train-annotations', default=ANNOTATIONS_TRAIN)
-    parser.add_argument('--train-image-dir', default=IMAGE_DIR_TRAIN)
-    parser.add_argument('--val-annotations', default=ANNOTATIONS_VAL)
-    parser.add_argument('--val-image-dir', default=IMAGE_DIR_VAL)
-    parser.add_argument('--n-images', default=None, type=int,
-                       help='number of images to sample')
-    parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
-                    help='momentum')
-    parser.add_argument('--weight-decay', '--wd', default=0.000, type=float,
-                    metavar='W', help='weight decay (default: 1e-4)') 
-    parser.add_argument('--nesterov', dest='nesterov', default=True, type=bool)     
-    parser.add_argument('--print_freq', default=20, type=int, metavar='N',
-                    help='number of iterations to print the training statistics')                                             
+                    help='path to where the model saved')                                                                                
     args = parser.parse_args()
 
     # add args.device
