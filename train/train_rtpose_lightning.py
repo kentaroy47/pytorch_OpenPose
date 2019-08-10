@@ -26,15 +26,20 @@ IMAGE_DIR_TRAIN = os.path.join(DATA_DIR, 'images/train2017')
 IMAGE_DIR_VAL = os.path.join(DATA_DIR, 'images/val2017')
 
 
-def cli():
+def parse_args():
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument('--cfg',
                         help='experiment configure file name',
-                        required=True,
+                        default = 'experiments/vgg19_368x368_sgd_lr1.yaml',
+                        #required=True,
                         type=str)    
+    parser.add_argument('opts',
+                        help="Modify config options using the command-line",
+                        default=None,
+                        nargs=argparse.REMAINDER)                        
     parser.add_argument('-o', '--output', default=None,
                         help='output file')
     parser.add_argument('--stride-apply', default=1, type=int,
@@ -46,29 +51,22 @@ def cli():
     parser.add_argument('--update-batchnorm-runningstatistics',
                         default=False, action='store_true',
                         help='update batch norm running statistics')
-    parser.add_argument('--square-edge', default=368, type=int,
-                        help='square edge of input images')
     parser.add_argument('--ema', default=1e-3, type=float,
                         help='ema decay constant')
     parser.add_argument('--disable-cuda', action='store_true',
                         help='disable CUDA')    
-    parser.add_argument('--log_dir', default='/data/rtpose/', type=str, metavar='DIR',
+    parser.add_argument('--logDir', default='/data/rtpose/', type=str, metavar='DIR',
                     help='path to where the model saved')                                              
-    parser.add_argument('--model_path', default='./network/weight/', type=str, metavar='DIR',
+    parser.add_argument('--modelDir', default='./network/weight/', type=str, metavar='DIR',
                     help='path to where the model saved')   
-                    
+    parser.add_argument('--dataDir', default='./network/weight/', type=str, metavar='DIR',
+                    help='path to where the model saved')                               
     parser.add_argument('--train-annotations', default=ANNOTATIONS_TRAIN)
     parser.add_argument('--train-image-dir', default=IMAGE_DIR_TRAIN)
     parser.add_argument('--val-annotations', default=ANNOTATIONS_VAL)
     parser.add_argument('--val-image-dir', default=IMAGE_DIR_VAL)
     parser.add_argument('--n-images', default=None, type=int,
                        help='number of images to sample')
-    parser.add_argument('--loader-workers', default=8, type=int,
-                       help='number of workers for data loading')
-    parser.add_argument('--batch-size', default=72, type=int,
-                       help='batch size')
-    parser.add_argument('--lr', '--learning-rate', default=1., type=float,
-                    metavar='LR', help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
     parser.add_argument('--weight-decay', '--wd', default=0.000, type=float,
@@ -88,16 +86,17 @@ def cli():
     return args
 
 
-args = cli()
 
+args = parse_args()
+update_config(cfg, args)
 print("Loading dataset...")
 # load train data
 preprocess = transforms.Compose([
         transforms.Normalize(),
         transforms.RandomApply(transforms.HFlip(), 0.5),
         transforms.RescaleRelative(),
-        transforms.Crop(args.square_edge),
-        transforms.CenterPad(args.square_edge),
+        transforms.Crop(cfg.DATASET.IMAGE_SIZE),
+        transforms.CenterPad(cfg.DATASET.IMAGE_SIZE),
     ])
 
 # model
@@ -107,10 +106,9 @@ use_vgg(rtpose_vgg)
 
 class rtpose_lightning(pl.LightningModule):
 
-    def __init__(self, args, preprocess, target_transforms, model):
+    def __init__(self, preprocess, target_transforms, model):
         super(rtpose_lightning, self).__init__()
         
-        self.args = args
         self.preprocess = preprocess
         self.model = model
         self.target_transforms = target_transforms
@@ -119,14 +117,7 @@ class rtpose_lightning(pl.LightningModule):
         _, saved_for_loss = self.model.forward(x)
         return saved_for_loss
 
-    def l2_loss(self, y_hat, y):
-        return F.mse_loss(y_hat, y, reduction='mean')
-        
-    def training_step(self, batch, batch_nb):
-    
-        img, heatmap_target, paf_target = batch
-        saved_for_loss = self.forward(img)
-        
+    def l2_loss(self, saved_for_loss, heatmap_target, paf_target):
         loss_dict = OrderedDict()
         total_loss = 0
         for j in range(6):
@@ -135,8 +126,8 @@ class rtpose_lightning(pl.LightningModule):
 
 
             # Compute losses
-            loss1 = self.l2_loss(pred1, paf_target)
-            loss2 = self.l2_loss(pred2, heatmap_target) 
+            loss1 = F.mse_loss(pred1, paf_target, reduction='mean')
+            loss2 = F.mse_loss(pred2, heatmap_target, reduction='mean') 
 
             total_loss += loss1
             total_loss += loss2
@@ -150,9 +141,16 @@ class rtpose_lightning(pl.LightningModule):
         loss_dict['max_heatmap'] = torch.max(pred2.data[:, :-1, :, :]).unsqueeze(0)
         loss_dict['min_heatmap'] = torch.min(pred2.data[:, :-1, :, :]).unsqueeze(0)
         loss_dict['max_paf'] = torch.max(pred1.data).unsqueeze(0)
-        loss_dict['min_paf'] = torch.min(pred1.data).unsqueeze(0)      
+        loss_dict['min_paf'] = torch.min(pred1.data).unsqueeze(0)     
+    
+        return loss_dict
+        
+    def training_step(self, batch, batch_nb):
+        img, heatmap_target, paf_target = batch
+        saved_for_loss = self.forward(img)
+        loss_dict = self.l2_loss(saved_for_loss, heatmap_target, paf_target)
         output = {
-            'loss': total_loss.unsqueeze(0), # required
+            'loss': loss_dict['loss'], # required
             'prog': loss_dict # optional
         }        
         return output
@@ -160,26 +158,8 @@ class rtpose_lightning(pl.LightningModule):
     def validation_step(self, batch, batch_nb):
         img, heatmap_target, paf_target = batch
         saved_for_loss = self.forward(img)
-        
-        loss_dict = OrderedDict()
-        total_loss = 0
-        for j in range(6):
-            pred1 = saved_for_loss[2 * j]
-            pred2 = saved_for_loss[2 * j + 1] 
-
-
-            # Compute losses
-            loss1 = self.l2_loss(pred1, paf_target)
-            loss2 = self.l2_loss(pred2, heatmap_target) 
-
-            total_loss += loss1
-            total_loss += loss2
-
-            # Get value from Variable and save for log
-            loss_dict['paf'] = loss1.unsqueeze(0)
-            loss_dict['heatmap'] = loss2.unsqueeze(0)     
-            
-        loss_dict['val_loss'] = total_loss.unsqueeze(0)   
+        loss_dict = self.l2_loss(saved_for_loss, heatmap_target, paf_target)
+        loss_dict['val_loss'] = loss_dict['loss']
         return loss_dict
         
     def validation_end(self, outputs):
@@ -191,10 +171,10 @@ class rtpose_lightning(pl.LightningModule):
 
     def configure_optimizers(self):
     
-        optimizer = torch.optim.SGD(self.parameters(), lr=self.args.lr,
-                           momentum=self.args.momentum,
-                           weight_decay=self.args.weight_decay,
-                           nesterov=self.args.nesterov)    
+        optimizer = torch.optim.SGD(self.parameters(), lr=cfg.TRAIN.LR,
+                           momentum=cfg.TRAIN.MOMENTUM,
+                           weight_decay=cfg.TRAIN.WD,
+                           nesterov=cfg.TRAIN.NESTEROV)    
                              
         #scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.8, patience=5, \
         #            verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=3,\
@@ -205,56 +185,56 @@ class rtpose_lightning(pl.LightningModule):
     @pl.data_loader
     def tng_dataloader(self):
         train_datas = [datasets.CocoKeypoints(
-            root=self.args.train_image_dir,
+            root=cfg.DATASET.TRAIN_IMAGE_DIR,
             annFile=item,
             preprocess=preprocess,
             image_transform=transforms.image_transform_train,
             target_transforms=self.target_transforms,
-            n_images=args.n_images,
-            ) for item in self.args.train_annotations]
+            n_images=None,
+            ) for item in cfg.DATASET.TRAIN_ANNOTATIONS]
 
         train_data = torch.utils.data.ConcatDataset(train_datas)
         
         train_loader = torch.utils.data.DataLoader(
-            train_data, batch_size=self.args.batch_size, shuffle=True,
-            pin_memory=self.args.pin_memory, num_workers=self.args.loader_workers, drop_last=True)
+            train_data, batch_size=cfg.TRAIN.BATCH_SIZE_PER_GPU*len(cfg.GPUS), shuffle=True,
+            pin_memory=cfg.PIN_MEMORY, num_workers=cfg.WORKERS, drop_last=True)
             
         return train_loader
 
     @pl.data_loader
     def val_dataloader(self):
         val_data = datasets.CocoKeypoints(
-            root=self.args.val_image_dir,
-            annFile=self.args.val_annotations,
+            root=self.cfg.DATASET.VAL_IMAGE_DIR,
+            annFile=cfg.DATASET.VAL_ANNOTATIONS,
             preprocess=preprocess,
             image_transform=transforms.image_transform_train,
             target_transforms=self.target_transforms,
-            n_images=self.args.n_images,
+            n_images=None,
         )
         val_loader = torch.utils.data.DataLoader(
-            val_data, batch_size=self.args.batch_size, shuffle=False,
-            pin_memory=self.args.pin_memory, num_workers=self.args.loader_workers, drop_last=True)
+            val_data, batch_size=cfg.TEST.BATCH_SIZE_PER_GPU*len(cfg.GPUS), shuffle=False,
+            pin_memory=cfg.PIN_MEMORY, num_workers=cfg.WORKERS, drop_last=True)
         
         return val_loader
 
     @pl.data_loader
     def test_dataloader(self):
         val_data = datasets.CocoKeypoints(
-            root=self.args.val_image_dir,
-            annFile=self.args.val_annotations,
+            root=self.cfg.DATASET.VAL_IMAGE_DIR,
+            annFile=cfg.DATASET.VAL_ANNOTATIONS,
             preprocess=preprocess,
             image_transform=transforms.image_transform_train,
             target_transforms=self.target_transforms,
-            n_images=self.args.n_images,
+            n_images=None,
         )
         val_loader = torch.utils.data.DataLoader(
-            val_data, batch_size=self.args.batch_size, shuffle=False,
-            pin_memory=self.args.pin_memory, num_workers=self.args.loader_workers, drop_last=True)
+            val_data, batch_size=cfg.TEST.BATCH_SIZE_PER_GPU*len(cfg.GPUS), shuffle=False,
+            pin_memory=cfg.PIN_MEMORY, num_workers=cfg.WORKERS, drop_last=True)
         
         return val_loader
 
-model = rtpose_lightning(args, preprocess, target_transforms=None, model = rtpose_vgg)
-exp = Experiment(save_dir=args.log_dir)
+model = rtpose_lightning(preprocess, target_transforms=None, model = rtpose_vgg)
+exp = Experiment(save_dir=cfg.LOG_DIR)
 
 # callbacks
 early_stop = EarlyStopping(
@@ -264,7 +244,7 @@ early_stop = EarlyStopping(
     mode='min'
 )
 
-model_save_path = '{}/{}/{}'.format(args.log_dir, exp.name, exp.version)
+model_save_path = '{}/{}/{}'.format(cfg.LOG_DIR, exp.name, exp.version)
 checkpoint = ModelCheckpoint(
     filepath=model_save_path,
     save_best_only=True,
@@ -275,7 +255,7 @@ checkpoint = ModelCheckpoint(
 
 trainer = Trainer(experiment=exp, \
                   max_nb_epochs=100, \
-                  gpus=[0, 1, 2, 3], \
+                  gpus=cfg.GPUS, \
                   checkpoint_callback=checkpoint,
                   early_stop_callback=early_stop)
 
