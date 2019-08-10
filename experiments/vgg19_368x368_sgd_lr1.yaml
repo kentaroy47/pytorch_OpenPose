@@ -19,10 +19,10 @@ DATASET:
   ROT_FACTOR: 40
   SCALE_FACTOR: 0.3
   IMAGE_SIZE: 368  
-    TRAIN_IMAGE_DIR: '/data/coco/images/train2017'
-    TRAIN_ANNOTATIONS: ['/data/coco/annotations/person_keypoints_train2017.json']
-    VAL_IMAGE_DIR: '/data/coco/images/val2017'
-    VAL_ANNOTATIONS: '/data/coco/annotations/person_keypoints_val2017.json' 
+  TRAIN_IMAGE_DIR: '/data/coco/images/train2017'
+  TRAIN_ANNOTATIONS: ['/data/coco/annotations/person_keypoints_train2017.json']
+  VAL_IMAGE_DIR: '/data/coco/images/val2017'
+  VAL_ANNOTATIONS: '/data/coco/annotations/person_keypoints_val2017.json' 
 MODEL:
   NAME: 'pose_resnet'
   PRETRAINED: 'models/pytorch/imagenet/resnet101-5d3b4d8f.pth'
