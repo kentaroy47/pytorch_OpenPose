@@ -1,5 +1,5 @@
 ## Introduction
- pytorch version of Multi-Person_Pose_Estimation
+Multi Person PoseEstimation By PyTorch
 
 ## Results
 
@@ -11,8 +11,11 @@
 
 ## Require
 1. [Pytorch](http://pytorch.org/)
-3. pip install pycocotools
+2. pytorch-lightning
 
+## Installation
+1. git submodule init && git submodule update
+2. `cd pytorch-lightning`; `python setup.py install`
 
 ## Demo
 - Download [converted pytorch model](https://www.dropbox.com/s/ae071mfm2qoyc8v/pose_model.pth?dl=0).
@@ -21,8 +24,8 @@
 - `python demo/web_demo.py` to run the web demo.
 
 ## Evalute
-- `python evaluate/evaluation.py` to evaluate the model on [images seperated by the rtpose author](https://github.com/CMU-Perceptual-Computing-Lab/caffe_rtpose/blob/master/image_info_val2014_1k.txt)
-- It should have `mAP 0.598` for the rtpose, previous rtpose have `mAP 0.577` because we do left and right flip for heatmap and PAF for the evaluation. 
+- `python evaluate/evaluation.py` to evaluate the model on coco val2017 dataset.
+- It should have `mAP 0.653` for the rtpose, previous rtpose have `mAP 0.577` because we do left and right flip for heatmap and PAF for the evaluation. 
 c
 ### Pretrained Models & Performance on the dataset split by the rtpose.
 [rtpose](https://www.dropbox.com/s/ae071mfm2qoyc8v/pose_model.pth?dl=0), [trained from scratch](https://www.dropbox.com/s/5v654d2u65fuvyr/pose_model_scratch.pth?dl=0) (Notice the preprocessing is different for different models)
