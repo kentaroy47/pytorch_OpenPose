@@ -204,7 +204,7 @@ class rtpose_lightning(pl.LightningModule):
     @pl.data_loader
     def val_dataloader(self):
         val_data = datasets.CocoKeypoints(
-            root=self.cfg.DATASET.VAL_IMAGE_DIR,
+            root=cfg.DATASET.VAL_IMAGE_DIR,
             annFile=cfg.DATASET.VAL_ANNOTATIONS,
             preprocess=preprocess,
             image_transform=transforms.image_transform_train,
@@ -220,7 +220,7 @@ class rtpose_lightning(pl.LightningModule):
     @pl.data_loader
     def test_dataloader(self):
         val_data = datasets.CocoKeypoints(
-            root=self.cfg.DATASET.VAL_IMAGE_DIR,
+            root=cfg.DATASET.VAL_IMAGE_DIR,
             annFile=cfg.DATASET.VAL_ANNOTATIONS,
             preprocess=preprocess,
             image_transform=transforms.image_transform_train,
