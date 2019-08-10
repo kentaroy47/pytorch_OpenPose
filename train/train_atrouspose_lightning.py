@@ -242,7 +242,7 @@ exp = Experiment(name='atrouspose', save_dir=args.log_dir)
 # callbacks
 early_stop = EarlyStopping(
     monitor='avg_val_loss',
-    patience=3,
+    patience=20,
     verbose=True,
     mode='min'
 )
