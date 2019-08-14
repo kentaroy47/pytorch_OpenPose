@@ -165,7 +165,7 @@ class rtpose_lightning(pl.LightningModule):
         #scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.8, patience=5, \
         #            verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=3,\
         #            min_lr=0, eps=1e-08)   
-        scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30,80], gamma=0.1)        
+        scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[100,150], gamma=0.1)        
         return [[optimizer], [scheduler]]
 
     @pl.data_loader
@@ -225,7 +225,7 @@ exp = Experiment(save_dir=cfg.LOG_DIR)
 # callbacks
 early_stop = EarlyStopping(
     monitor='avg_val_loss',
-    patience=20,
+    patience=50,
     verbose=True,
     mode='min'
 )
