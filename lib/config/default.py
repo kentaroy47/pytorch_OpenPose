@@ -12,7 +12,7 @@ _C = CN()
 _C.OUTPUT_DIR = ''
 _C.LOG_DIR = ''
 _C.DATA_DIR = ''
-_C.GPUS = (0,)
+_C.GPUS = [0,1,2,3]
 _C.WORKERS = 4
 _C.PRINT_FREQ = 20
 _C.AUTO_RESUME = False
@@ -65,6 +65,15 @@ _C.DATASET.PROB_HALF_BODY = 0.0
 _C.DATASET.NUM_JOINTS_HALF_BODY = 8
 _C.DATASET.COLOR_RGB = False
 _C.DATASET.IMAGE_SIZE = 368  
+
+# train
+_C.PRE_TRAIN = CN()
+_C.PRE_TRAIN.LR = 1.0
+_C.PRE_TRAIN.OPTIMIZER = 'adam'
+_C.PRE_TRAIN.MOMENTUM = 0.9
+_C.PRE_TRAIN.WD = 0.0001
+_C.PRE_TRAIN.NESTEROV = False
+
 # train
 _C.TRAIN = CN()
 
@@ -80,6 +89,9 @@ _C.TRAIN.GAMMA1 = 0.99
 _C.TRAIN.GAMMA2 = 0.0
 
 _C.TRAIN.EPOCHS = 140
+_C.TRAIN.FREEZE_BASE_EPOCHS = 5
+#'apply and reset gradients every n batches'
+_C.TRAIN.STRIDE_APPLY = 1
 
 _C.TRAIN.RESUME = False
 _C.TRAIN.CHECKPOINT = ''
@@ -123,11 +135,8 @@ def update_config(cfg, args):
     cfg.merge_from_file(args.cfg)
     cfg.merge_from_list(args.opts)
 
-    if args.modelDir:
-        cfg.OUTPUT_DIR = args.modelDir
-
-    if args.logDir:
-        cfg.LOG_DIR = args.logDir
+    if args.outputDir:
+        cfg.OUTPUT_DIR = args.outputDir
 
     if args.dataDir:
         cfg.DATA_DIR = args.dataDir

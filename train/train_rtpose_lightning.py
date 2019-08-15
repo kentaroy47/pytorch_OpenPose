@@ -20,16 +20,6 @@ from lib.datasets import coco, transforms, datasets
 from lib.config import cfg, update_config
 
 
-DATA_DIR = '/data/coco'
-
-ANNOTATIONS_TRAIN = [os.path.join(DATA_DIR, 'annotations', item) for item in [
-    'person_keypoints_train2017.json']]
-ANNOTATIONS_VAL = os.path.join(
-    DATA_DIR, 'annotations', 'person_keypoints_val2017.json')
-IMAGE_DIR_TRAIN = os.path.join(DATA_DIR, 'images/train2017')
-IMAGE_DIR_VAL = os.path.join(DATA_DIR, 'images/val2017')
-
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -37,7 +27,7 @@ def parse_args():
     )
     parser.add_argument('--cfg',
                         help='experiment configure file name',
-                        default='experiments/vgg19_368x368_sgd_lr1.yaml',
+                        default='../experiments/vgg19_368x368_sgd_lr1.yaml',
                         type=str)
     parser.add_argument('opts',
                         help="Modify config options using the command-line",
@@ -45,25 +35,12 @@ def parse_args():
                         nargs=argparse.REMAINDER)
     parser.add_argument('-o', '--output', default=None,
                         help='output file')
-    parser.add_argument('--stride-apply', default=1, type=int,
-                        help='apply and reset gradients every n batches')
-    parser.add_argument('--epochs', default=75, type=int,
-                        help='number of epochs to train')
-    parser.add_argument('--freeze-base', default=0, type=int,
-                        help='number of epochs to train with frozen base')
-    parser.add_argument('--update-batchnorm-runningstatistics',
-                        default=False, action='store_true',
-                        help='update batch norm running statistics')
-    parser.add_argument('--ema', default=1e-3, type=float,
-                        help='ema decay constant')
     parser.add_argument('--disable-cuda', action='store_true',
                         help='disable CUDA')
-    parser.add_argument('--logDir', default='/data/rtpose/', type=str, metavar='DIR',
-                        help='path to where the model saved')
-    parser.add_argument('--modelDir', default='./network/weight/', type=str, metavar='DIR',
-                        help='path to where the model saved')
-    parser.add_argument('--dataDir', default='./network/weight/', type=str, metavar='DIR',
-                        help='path to where the model saved')
+    parser.add_argument('--outputDir', default='/home/tensorboy/data/rtpose/', type=str, metavar='DIR',
+                        help='path to where the log saved')
+    parser.add_argument('--dataDir', default='/home/tensorboy/data', type=str, metavar='DIR',
+                        help='path to where the data saved')
     args = parser.parse_args()
 
     # add args.device
@@ -96,11 +73,12 @@ use_vgg(rtpose_vgg)
 
 class rtpose_lightning(pl.LightningModule):
 
-    def __init__(self, preprocess, target_transforms, model):
+    def __init__(self, preprocess, target_transforms, model, optimizer):
         super(rtpose_lightning, self).__init__()
 
         self.preprocess = preprocess
         self.model = model
+        self.opt = optimizer
         self.target_transforms = target_transforms
 
     def forward(self, x):
@@ -162,17 +140,12 @@ class rtpose_lightning(pl.LightningModule):
 
     def configure_optimizers(self):
 
-        optimizer = torch.optim.SGD(self.parameters(), lr=cfg.TRAIN.LR,
-                                    momentum=cfg.TRAIN.MOMENTUM,
-                                    weight_decay=cfg.TRAIN.WD,
-                                    nesterov=cfg.TRAIN.NESTEROV)
-
         #scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.8, patience=5, \
         #            verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=3,\
         #            min_lr=0, eps=1e-08)
         scheduler = lr_scheduler.MultiStepLR(
-            optimizer, milestones=[100, 150], gamma=0.1)
-        return [[optimizer], [scheduler]]
+            optimizer, milestones=cfg.TRAIN.LR_STEP, gamma=0.1)
+        return [[self.opt], [scheduler]]
 
     @pl.data_loader
     def tng_dataloader(self):
@@ -225,10 +198,6 @@ class rtpose_lightning(pl.LightningModule):
 
         return val_loader
 
-
-model = rtpose_lightning(preprocess, target_transforms=None, model=rtpose_vgg)
-exp = Experiment(save_dir=cfg.LOG_DIR)
-
 # callbacks
 early_stop = EarlyStopping(
     monitor='avg_val_loss',
@@ -237,7 +206,7 @@ early_stop = EarlyStopping(
     mode='min'
 )
 
-model_save_path = '{}/{}/{}'.format(cfg.LOG_DIR, exp.name, exp.version)
+model_save_path = '{}/{}/{}'.format(cfg.OUTPUT_DIR, exp.name, exp.version)
 checkpoint = ModelCheckpoint(
     filepath=model_save_path,
     save_best_only=True,
@@ -246,10 +215,53 @@ checkpoint = ModelCheckpoint(
     mode='min'
 )
 
+if cfg.PRE_TRAIN.FREEZE_BASE:
+    # Fix the VGG weights first, and then the weights will be released
+    for i in range(20):
+        for param in rtpose_vgg.model0[i].parameters():
+            param.requires_grad = False
+
+    trainable_vars = [param for param in rtpose_vgg.parameters() if param.requires_grad]
+
+    optimizer = torch.optim.SGD(trainable_vars, lr=cfg.PRE_TRAIN.LR,
+                                momentum=cfg.PRE_TRAIN.MOMENTUM,
+                                weight_decay=cfg.PRE_TRAIN.WD,
+                                nesterov=cfg.PRE_TRAIN.NESTEROV)
+
+    model = rtpose_lightning(preprocess, target_transforms=None, model=rtpose_vgg, optimizer = optimizer)
+    exp = Experiment(save_dir=cfg.OUTPUT_DIR)
+
+
+    trainer = Trainer(experiment=exp,
+                      max_nb_epochs=cfg.PRE_TRAIN.FREEZE_BASE,
+                      gpus=cfg.GPUS,
+                      checkpoint_callback=checkpoint,
+                      early_stop_callback=early_stop)
+
+    trainer.fit(model)
+
+# Release all weights                                   
+for param in rtpose_lightning.model.parameters():
+    param.requires_grad = True
+
+trainable_vars = [param for param in rtpose_lightning.model.parameters() if param.requires_grad]
+
+optimizer = torch.optim.SGD(trainable_vars, lr=cfg.TRAIN.LR,
+                            momentum=cfg.TRAIN.MOMENTUM,
+                            weight_decay=cfg.TRAIN.WD,
+                            nesterov=cfg.TRAIN.NESTEROV)
+
+model = rtpose_lightning(preprocess, target_transforms=None, model=rtpose_lightning.model, optimizer = optimizer)
+exp = Experiment(save_dir=cfg.OUTPUT_DIR)
+
+
 trainer = Trainer(experiment=exp,
                   max_nb_epochs=cfg.TRAIN.EPOCHS,
-                  gpus=list(cfg.GPUS),
+                  gpus=cfg.GPUS,
                   checkpoint_callback=checkpoint,
                   early_stop_callback=early_stop)
 
 trainer.fit(model)
+
+
+

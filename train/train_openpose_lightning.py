@@ -1,13 +1,12 @@
-import argparse
-import time
 import os
+import time
+import argparse
 import numpy as np
 from collections import OrderedDict
 
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.optim.lr_scheduler as lr_scheduler
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
@@ -185,7 +184,7 @@ class rtpose_lightning(pl.LightningModule):
                            weight_decay=self.args.weight_decay,
                            nesterov=self.args.nesterov)    
                              
-        #scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.8, patience=5, \
+        #scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.8, patience=5, \
         #            verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=3,\
         #            min_lr=0, eps=1e-08)   
         scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30,80], gamma=0.1)        
