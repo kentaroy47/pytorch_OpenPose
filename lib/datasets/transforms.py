@@ -17,6 +17,8 @@ import math
 import numpy as np
 import PIL
 import scipy
+import random
+import cv2
 import torch
 import torchvision
 from functools import partial, reduce
@@ -467,3 +469,106 @@ class RotateBy90(Preprocess):
         ymax = np.max(four_corners[:, 1])
 
         return np.array([x, y, xmax - x, ymax - y])
+      
+          
+class RandomRotate(Preprocess):
+    def __init__(self, max_rotate_degree=40):
+        super().__init__()
+        self.log = logging.getLogger(self.__class__.__name__)
+
+        self.max_rotate_degree =  max_rotate_degree
+
+    def __call__(self, image, anns, meta):
+
+        meta = copy.deepcopy(meta)
+        anns = copy.deepcopy(anns)
+        w, h = image.size
+        
+        dice = random.random()
+        degree = (dice - 0.5) * 2 * \
+            self.max_rotate_degree  # degree [-40,40]
+
+        img_rot, R = self.rotate_bound(np.asarray(image), np.copy(degree), (128, 128, 128))
+        image = PIL.Image.fromarray(img_rot)
+
+        for j,ann in enumerate(anns):
+            for k in range(17):
+                xy = ann['keypoints'][k, :2]     
+                new_xy = self.rotatepoint(xy, R)
+                anns[j]['keypoints'][k, :2] = new_xy
+                
+            ann['bbox'] = self.rotate_box(ann['bbox'], R)
+
+        self.log.debug('meta before: %s', meta)
+        meta['valid_area'] = self.rotate_box(meta['valid_area'], R)
+        self.log.debug('meta after: %s', meta)
+
+        for ann in anns:
+            ann['valid_area'] = meta['valid_area']
+
+        return image, anns, meta
+
+    @staticmethod
+    def rotatepoint(p, R):
+        point = np.zeros((3, 1))
+        point[0] = p[0]
+        point[1] = p[1]
+        point[2] = 1
+
+        new_point = R.dot(point)
+
+        p[0] = new_point[0]
+
+        p[1] = new_point[1]
+        return p
+    
+    # The correct way to rotation an image
+    # http://www.pyimagesearch.com/2017/01/02/rotate-images-correctly-with-opencv-and-python/
+   
+    def rotate_bound(self, image, angle, bordervalue):
+        # grab the dimensions of the image and then determine the
+        # center
+        (h, w) = image.shape[:2]
+        (cX, cY) = (w // 2, h // 2)
+
+        # grab the rotation matrix (applying the negative of the
+        # angle to rotate clockwise), then grab the sine and cosine
+        # (i.e., the rotation components of the matrix)
+        M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)
+        cos = np.abs(M[0, 0])
+        sin = np.abs(M[0, 1])
+
+        # compute the new bounding dimensions of the image
+        nW = int((h * sin) + (w * cos))
+        nH = int((h * cos) + (w * sin))
+
+        # adjust the rotation matrix to take into account translation
+        M[0, 2] += (nW / 2) - cX
+        M[1, 2] += (nH / 2) - cY
+
+        # perform the actual rotation and return the image
+        return cv2.warpAffine(image, M, (nW, nH), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT,
+                              borderValue=bordervalue), M    
+        
+    def rotate_box(self, bbox, R):
+        """Input bounding box is of the form x, y, width, height."""
+        four_corners = np.array([
+            [bbox[0], bbox[1]],
+            [bbox[0] + bbox[2], bbox[1]],
+            [bbox[0], bbox[1] + bbox[3]],
+            [bbox[0] + bbox[2], bbox[1] + bbox[3]],
+        ])
+        
+        new_four_corners = []
+        for i in range(4):
+            xy = self.rotatepoint(four_corners[i], R)
+            new_four_corners.append(xy)
+        
+        new_four_corners = np.array(new_four_corners)
+
+        x = np.min(new_four_corners[:, 0])
+        y = np.min(new_four_corners[:, 1])
+        xmax = np.max(new_four_corners[:, 0])
+        ymax = np.max(new_four_corners[:, 1])
+
+        return np.array([x, y, xmax - x, ymax - y])        
