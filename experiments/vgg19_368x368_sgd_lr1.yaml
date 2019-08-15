@@ -2,6 +2,8 @@ CUDNN:
   BENCHMARK: true
   DETERMINISTIC: false
   ENABLED: true
+  
+EXPERIMENT_NAME: 'rtpose_lr2'
 DATA_DIR: '/home/tensorboy/data'
 GPUS: 
   - 0
@@ -41,7 +43,7 @@ MODEL:
 LOSS:
   USE_TARGET_WEIGHT: true
 PRE_TRAIN :
-  LR : 1.0
+  LR : 2.0
   OPTIMIZER : 'sgd'
   MOMENTUM : 0.9
   WD : 0.0001
@@ -52,7 +54,7 @@ TRAIN:
   SHUFFLE: true
   EPOCHS: 300
   OPTIMIZER: 'sgd'
-  LR: 1.
+  LR: 2.
   LR_FACTOR: 0.1
   LR_STEP:
   - 90

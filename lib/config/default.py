@@ -11,6 +11,7 @@ _C = CN()
 
 _C.OUTPUT_DIR = ''
 _C.LOG_DIR = ''
+_C.EXPERIMENT_NAME = ''
 _C.DATA_DIR = ''
 _C.GPUS = [0,1,2,3]
 _C.WORKERS = 4

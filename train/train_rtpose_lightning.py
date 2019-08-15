@@ -198,7 +198,7 @@ class rtpose_lightning(pl.LightningModule):
 
         return val_loader
 
-exp = Experiment(name='rtpose_lr_1', save_dir=cfg.OUTPUT_DIR)
+exp = Experiment(name=cfg.EXPERIMENT_NAME, save_dir=cfg.OUTPUT_DIR)
 # callbacks
 early_stop = EarlyStopping(
     monitor='avg_val_loss',
