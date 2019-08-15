@@ -234,7 +234,7 @@ if cfg.PRE_TRAIN.FREEZE_BASE_EPOCHS:
 
 
     trainer = Trainer(experiment=exp,
-                      max_nb_epochs=cfg.PRE_TRAIN.FREEZE_BASE,
+                      max_nb_epochs=cfg.PRE_TRAIN.FREEZE_BASE_EPOCHS,
                       gpus=cfg.GPUS,
                       checkpoint_callback=checkpoint,
                       early_stop_callback=early_stop)

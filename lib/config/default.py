@@ -73,7 +73,7 @@ _C.PRE_TRAIN.OPTIMIZER = 'adam'
 _C.PRE_TRAIN.MOMENTUM = 0.9
 _C.PRE_TRAIN.WD = 0.0001
 _C.PRE_TRAIN.NESTEROV = False
-
+_C.TRAIN.FREEZE_BASE_EPOCHS = 5
 # train
 _C.TRAIN = CN()
 
@@ -89,7 +89,7 @@ _C.TRAIN.GAMMA1 = 0.99
 _C.TRAIN.GAMMA2 = 0.0
 
 _C.TRAIN.EPOCHS = 140
-_C.TRAIN.FREEZE_BASE_EPOCHS = 5
+
 #'apply and reset gradients every n batches'
 _C.TRAIN.STRIDE_APPLY = 1
 
