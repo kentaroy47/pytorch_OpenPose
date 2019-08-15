@@ -198,6 +198,7 @@ class rtpose_lightning(pl.LightningModule):
 
         return val_loader
 
+exp = Experiment(name='rtpose_lr_1', save_dir=cfg.OUTPUT_DIR)
 # callbacks
 early_stop = EarlyStopping(
     monitor='avg_val_loss',
@@ -229,7 +230,7 @@ if cfg.PRE_TRAIN.FREEZE_BASE:
                                 nesterov=cfg.PRE_TRAIN.NESTEROV)
 
     model = rtpose_lightning(preprocess, target_transforms=None, model=rtpose_vgg, optimizer = optimizer)
-    exp = Experiment(save_dir=cfg.OUTPUT_DIR)
+
 
 
     trainer = Trainer(experiment=exp,
@@ -252,7 +253,6 @@ optimizer = torch.optim.SGD(trainable_vars, lr=cfg.TRAIN.LR,
                             nesterov=cfg.TRAIN.NESTEROV)
 
 model = rtpose_lightning(preprocess, target_transforms=None, model=rtpose_lightning.model, optimizer = optimizer)
-exp = Experiment(save_dir=cfg.OUTPUT_DIR)
 
 
 trainer = Trainer(experiment=exp,
