@@ -37,9 +37,9 @@ def parse_args():
                         help='output file')
     parser.add_argument('--disable-cuda', action='store_true',
                         help='disable CUDA')
-    parser.add_argument('--outputDir', default='/home/tensorboy/data/rtpose/', type=str, metavar='DIR',
+    parser.add_argument('--outputDir', default='/data/rtpose/', type=str, metavar='DIR',
                         help='path to where the log saved')
-    parser.add_argument('--dataDir', default='/home/tensorboy/data', type=str, metavar='DIR',
+    parser.add_argument('--dataDir', default='/data', type=str, metavar='DIR',
                         help='path to where the data saved')
     args = parser.parse_args()
 
