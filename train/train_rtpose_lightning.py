@@ -216,7 +216,7 @@ checkpoint = ModelCheckpoint(
     mode='min'
 )
 
-if cfg.PRE_TRAIN.FREEZE_BASE:
+if cfg.PRE_TRAIN.FREEZE_BASE_EPOCHS:
     # Fix the VGG weights first, and then the weights will be released
     for i in range(20):
         for param in rtpose_vgg.model0[i].parameters():
