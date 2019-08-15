@@ -14,9 +14,11 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from test_tube import Experiment
 
+import _init_paths
 from lib.network.rtpose_vgg import get_model, use_vgg
 from lib.datasets import coco, transforms, datasets
 from lib.config import cfg, update_config
+
 
 DATA_DIR = '/data/coco'
 

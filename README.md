@@ -27,13 +27,24 @@ Multi Person PoseEstimation By PyTorch
 - `python evaluate/evaluation.py` to evaluate the model on coco val2017 dataset.
 - It should have `mAP 0.653` for the rtpose, previous rtpose have `mAP 0.577` because we do left and right flip for heatmap and PAF for the evaluation. 
 c
-### Pretrained Models & Performance on the dataset split by the rtpose.
-[rtpose](https://www.dropbox.com/s/ae071mfm2qoyc8v/pose_model.pth?dl=0)
+### Benchmarks
 
-| mAP of original rtpose| - | 
+#### Hardware
+
+- NVIDIA 1080ti GPU
+
+#### Software
+
+- PyTorch version: 1.2
+- CUDA 11.0
+- CUDNN 7.5
+
+| model name| mAP |  Inference Time | 
 | :---------: | :---------: |
-| 0.653     |  - |
+|[original rtpose]   | 0.653 |-|
 
+Download link:
+[rtpose](https://www.dropbox.com/s/ae071mfm2qoyc8v/pose_model.pth?dl=0)
 
 ## Training
 - `cd training; bash getData.sh` to obtain the COCO 2017 images in `/data/root/coco/images/`, keypoints annotations in `/data/root/coco/annotations/`,
@@ -59,8 +70,7 @@ ${DATA_ROOT}
 
 ```
 - Modify the data directory in `train/train_VGG19.py` and `python train/train_VGG19.py`
-- `python train_ShuffleNetV2.py --batch_size 160 --logdir {where to store tensorboardX logs}`
-- `python train_SH.py --batch_size 64 --lr 0.1 --logdir {where to store tensorboardX logs}`
+
 ## Related repository
 - CVPR'17, [Realtime Multi-Person Pose Estimation](https://github.com/ZheC/Realtime_Multi-Person_Pose_Estimation).
 
