@@ -28,9 +28,9 @@ Multi Person PoseEstimation By PyTorch
 - It should have `mAP 0.653` for the rtpose, previous rtpose have `mAP 0.577` because we do left and right flip for heatmap and PAF for the evaluation. 
 c
 ### Pretrained Models & Performance on the dataset split by the rtpose.
-[rtpose](https://www.dropbox.com/s/ae071mfm2qoyc8v/pose_model.pth?dl=0), [trained from scratch](https://www.dropbox.com/s/5v654d2u65fuvyr/pose_model_scratch.pth?dl=0) (Notice the preprocessing is different for different models)
+[rtpose](https://www.dropbox.com/s/ae071mfm2qoyc8v/pose_model.pth?dl=0)
 
-| mAP of original rtpose| Trained from scratch in this repo| 
+| mAP of original rtpose| - | 
 | :---------: | :---------: |
 | 0.653     |  - |
 
