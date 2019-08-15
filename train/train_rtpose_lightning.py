@@ -245,14 +245,14 @@ if cfg.PRE_TRAIN.FREEZE_BASE_EPOCHS:
 for param in rtpose_lightning.model.parameters():
     param.requires_grad = True
 
-trainable_vars = [param for param in rtpose_lightning.model.parameters() if param.requires_grad]
+trainable_vars = [param for param in rtpose_vgg.parameters() if param.requires_grad]
 
 optimizer = torch.optim.SGD(trainable_vars, lr=cfg.TRAIN.LR,
                             momentum=cfg.TRAIN.MOMENTUM,
                             weight_decay=cfg.TRAIN.WD,
                             nesterov=cfg.TRAIN.NESTEROV)
 
-model = rtpose_lightning(preprocess, target_transforms=None, model=rtpose_lightning.model, optimizer = optimizer)
+model = rtpose_lightning(preprocess, target_transforms=None, model=rtpose_vgg, optimizer = optimizer)
 
 
 trainer = Trainer(experiment=exp,
