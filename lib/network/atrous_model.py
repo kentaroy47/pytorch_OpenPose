@@ -140,9 +140,9 @@ class feature_extractor(nn.Module):
         return x
 
 
-class Ying_model(nn.Module):
+class Atrous_model(nn.Module):
     def __init__(self, stages=5, have_bn = True, have_bias = False):
-        super(Ying_model, self).__init__()
+        super(Atrous_model, self).__init__()
         self.stages = stages
         self.feature_extractor = feature_extractor(have_bn = have_bn, have_bias=have_bias)
         self.stage_0 = nn.Sequential(nn.Conv2d(in_channels=288, out_channels=256, kernel_size=3, padding=1),
@@ -218,8 +218,8 @@ class Ying_model(nn.Module):
         return total_loss, saved_for_log
 
 
-def get_ying_model(stages=5, have_bn= False, have_bias = True):
-    return Ying_model(stages=stages, have_bn =have_bn, have_bias=have_bias)
+def get_atrous_model(stages=5, have_bn= False, have_bias = True):
+    return Atrous_model(stages=stages, have_bn =have_bn, have_bias=have_bias)
 
 
 def build_names():
@@ -234,10 +234,10 @@ def build_names():
 :param model, the PyTorch nn.Module which will train.
 :param model_path, the directory which load the pretrained model, will download one if not have.               
 """    
-def use_inception(model, model_path):
+def use_inception(model):
     
     url = 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth'
-    incep_state_dict = model_zoo.load_url(url, model_dir= model_path)
+    incep_state_dict = model_zoo.load_url(url)
     incep_keys = incep_state_dict.keys()
     
     # load weights of vgg
@@ -249,4 +249,4 @@ def use_inception(model, model_path):
     state = model.state_dict()
     state.update(weights_load)
     model.load_state_dict(state)
-    print('load imagenet pretrained model: {}'.format(model_path))
+    print('load imagenet pretrained model')
