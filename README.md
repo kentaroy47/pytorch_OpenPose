@@ -27,17 +27,7 @@ Multi Person PoseEstimation By PyTorch
 - `python evaluate/evaluation.py` to evaluate the model on coco val2017 dataset.
 - It should have `mAP 0.653` for the rtpose, previous rtpose have `mAP 0.577` because we do left and right flip for heatmap and PAF for the evaluation. 
 c
-### Benchmarks
-
-#### Hardware
-
-- NVIDIA 1080ti GPU
-
-#### Software
-
-- PyTorch version: 1.2
-- CUDA 11.0
-- CUDNN 7.5
+### Main Results
 
 | model name| mAP |  Inference Time | 
 | :---------: | :---------: |
@@ -46,7 +36,15 @@ c
 Download link:
 [rtpose](https://www.dropbox.com/s/ae071mfm2qoyc8v/pose_model.pth?dl=0)
 
-## Training
+## Development environment
+
+The code is developed using python 3.6 on Ubuntu 18.04. NVIDIA GPUs are needed. The code is developed and tested using 4 1080ti GPU cards. Other platforms or GPU cards are not fully tested.  
+
+## Quick start
+
+### 1. Preparation
+
+#### 1.1 Prepare the dataset
 - `cd training; bash getData.sh` to obtain the COCO 2017 images in `/data/root/coco/images/`, keypoints annotations in `/data/root/coco/annotations/`,
 make them look like this:
 ```
@@ -69,6 +67,8 @@ ${DATA_ROOT}
         
 
 ```
+
+### 2. How to train the model
 - Modify the data directory in `train/train_VGG19.py` and `python train/train_VGG19.py`
 
 ## Related repository
