@@ -74,6 +74,7 @@ def load_pretrained_model(trainer, rtpose_model):
 
     last_ckpt_path = os.path.join(trainer.checkpoint_callback.filepath, last_ckpt_name)
     state_dict = torch.load(last_ckpt_path, map_location=lambda storage, loc: storage)['state_dict']
+    state_dict = {k.replace('model.',''):v for k,v in state_dict.items()}    
     rtpose_model.load_state_dict(state_dict)
  
     return rtpose_model
