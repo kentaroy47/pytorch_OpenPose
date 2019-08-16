@@ -242,7 +242,7 @@ if cfg.PRE_TRAIN.FREEZE_BASE_EPOCHS:
     trainer.fit(model)
 
 # Release all weights                                   
-for param in rtpose_vgg.model.parameters():
+for param in rtpose_vgg.parameters():
     param.requires_grad = True
 
 trainable_vars = [param for param in rtpose_vgg.parameters() if param.requires_grad]
