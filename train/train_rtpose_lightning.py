@@ -37,7 +37,7 @@ def parse_args():
                         help='output file')
     parser.add_argument('--disable-cuda', action='store_true',
                         help='disable CUDA')
-    parser.add_argument('--outputDir', default='/data/rtpose/', type=str, metavar='DIR',
+    parser.add_argument('--outputDir', default='/data/rtpose', type=str, metavar='DIR',
                         help='path to where the log saved')
     parser.add_argument('--dataDir', default='/data', type=str, metavar='DIR',
                         help='path to where the data saved')
@@ -52,7 +52,29 @@ def parse_args():
 
     return args
 
+def load_pretrained_model(trainer, rtpose_model):
+    checkpoints = os.listdir(trainer.checkpoint_callback.filepath)
+    for name in checkpoints:
+        # ignore hpc ckpts
+        if 'hpc_' in name:
+            continue
 
+        if '.ckpt' in name:
+            epoch = name.split('epoch_')[1]
+            epoch = int(re.sub('[^0-9]', '', epoch))
+
+            if epoch > last_epoch:
+                last_epoch = epoch
+                last_ckpt_name = name
+
+    # restore last checkpoint
+
+    last_ckpt_path = os.path.join(trainer.checkpoint_callback.filepath, last_ckpt_name)
+    state_dict = torch.load(last_ckpt_path, map_location=lambda storage, loc: storage)['state_dict']
+    rtpose_model.load_state_dict(state_dict)
+ 
+    return rtpose_model
+    
 args = parse_args()
 update_config(cfg, args)
 print("Loading dataset...")
@@ -69,8 +91,7 @@ preprocess = transforms.Compose([
 rtpose_vgg = get_model(trunk='vgg19')
 # load pretrained
 use_vgg(rtpose_vgg)
-
-
+               
 class rtpose_lightning(pl.LightningModule):
 
     def __init__(self, preprocess, target_transforms, model, optimizer):
@@ -252,9 +273,11 @@ optimizer = torch.optim.SGD(trainable_vars, lr=cfg.TRAIN.LR,
                             weight_decay=cfg.TRAIN.WD,
                             nesterov=cfg.TRAIN.NESTEROV)
 
+load_pretrained_model(trainer, rtpose_vgg)
 model = rtpose_lightning(preprocess, target_transforms=None, model=rtpose_vgg, optimizer = optimizer)
 
 
+        self.restore(last_ckpt_path, self.on_gpu)
 trainer = Trainer(experiment=exp,
                   max_nb_epochs=cfg.TRAIN.EPOCHS,
                   gpus=cfg.GPUS,
