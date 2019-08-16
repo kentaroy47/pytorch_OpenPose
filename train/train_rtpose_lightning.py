@@ -276,8 +276,6 @@ optimizer = torch.optim.SGD(trainable_vars, lr=cfg.TRAIN.LR,
 load_pretrained_model(trainer, rtpose_vgg)
 model = rtpose_lightning(preprocess, target_transforms=None, model=rtpose_vgg, optimizer = optimizer)
 
-
-        self.restore(last_ckpt_path, self.on_gpu)
 trainer = Trainer(experiment=exp,
                   max_nb_epochs=cfg.TRAIN.EPOCHS,
                   gpus=cfg.GPUS,
