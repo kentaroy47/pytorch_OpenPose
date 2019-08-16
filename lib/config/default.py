@@ -155,8 +155,7 @@ def update_config(cfg, args):
         
     cfg.DATASET.VAL_ANNOTATIONS = os.path.join(
         cfg.DATASET.ROOT, cfg.DATASET.VAL_ANNOTATIONS
-    )
-    )    
+    )  
     cfg.MODEL.PRETRAINED = os.path.join(
         cfg.DATA_DIR, cfg.MODEL.PRETRAINED
     )
