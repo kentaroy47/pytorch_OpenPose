@@ -16,7 +16,6 @@ _C.DATA_DIR = ''
 _C.GPUS = [0,1,2,3]
 _C.WORKERS = 4
 _C.PRINT_FREQ = 20
-_C.AUTO_RESUME = False
 _C.PIN_MEMORY = True
 _C.RANK = 0
 
@@ -143,9 +142,21 @@ def update_config(cfg, args):
         cfg.DATA_DIR = args.dataDir
 
     cfg.DATASET.ROOT = os.path.join(
-        cfg.DATA_DIR, cfg.DATASET.ROOT
+        cfg.DATA_DIR, cfg.DATASET.DATASET
     )
-
+    cfg.DATASET.TRAIN_IMAGE_DIR= os.path.join(
+        cfg.DATASET.ROOT, cfg.DATASET.TRAIN_IMAGE_DIR
+    )
+    cfg.DATASET.VAL_IMAGE_DIR = os.path.join(
+        cfg.DATASET.ROOT, cfg.DATASET.VAL_IMAGE_DIR
+    )
+    cfg.DATASET.TRAIN_ANNOTATIONS= [os.path.join(
+        cfg.DATASET.ROOT, item) for item in cfg.DATASET.TRAIN_ANNOTATIONS]
+        
+    cfg.DATASET.VAL_ANNOTATIONS = os.path.join(
+        cfg.DATASET.ROOT, cfg.DATASET.VAL_ANNOTATIONS
+    )
+    )    
     cfg.MODEL.PRETRAINED = os.path.join(
         cfg.DATA_DIR, cfg.MODEL.PRETRAINED
     )

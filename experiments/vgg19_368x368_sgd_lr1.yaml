@@ -1,8 +1,3 @@
-CUDNN:
-  BENCHMARK: true
-  DETERMINISTIC: false
-  ENABLED: true
-  
 EXPERIMENT_NAME: 'rtpose_lr3'
 DATA_DIR: '/data'
 GPUS: 
@@ -14,41 +9,45 @@ OUTPUT_DIR: 'output'
 WORKERS: 8
 PRINT_FREQ: 100
 
+CUDNN:
+  BENCHMARK: true
+  DETERMINISTIC: false
+  ENABLED: true
+  
 DATASET:
   COLOR_RGB: false
   DATASET: 'coco'
-  ROOT: '/data/coco/'
   TEST_SET: 'val2017'
   TRAIN_SET: 'train2017'
   FLIP: true
   ROT_FACTOR: 40
-  SCALE_FACTOR: 0.3
   IMAGE_SIZE: 368  
-  TRAIN_IMAGE_DIR: '/data/coco/images/train2017'
-  TRAIN_ANNOTATIONS: ['/data/coco/annotations/person_keypoints_train2017.json']
-  VAL_IMAGE_DIR: '/data/coco/images/val2017'
-  VAL_ANNOTATIONS: '/data/coco/annotations/person_keypoints_val2017.json' 
+  TRAIN_IMAGE_DIR: 'images/train2017'
+  TRAIN_ANNOTATIONS: ['annotations/person_keypoints_train2017.json']
+  VAL_IMAGE_DIR: 'images/val2017'
+  VAL_ANNOTATIONS: 'annotations/person_keypoints_val2017.json' 
+  
 MODEL:
   NAME: 'pose_resnet'
   PRETRAINED: 'models/pytorch/imagenet/resnet101-5d3b4d8f.pth'
-  IMAGE_SIZE:
-  - 192
-  - 256
   HEATMAP_SIZE:
-  - 48
-  - 64
-  SIGMA: 2
+  - 46
+  - 46
+  SIGMA: 7
   NUM_JOINTS: 17
   TARGET_TYPE: 'gaussian'
+  
 LOSS:
   USE_TARGET_WEIGHT: true
+  
 PRE_TRAIN :
   LR : 3.
   OPTIMIZER : 'sgd'
   MOMENTUM : 0.9
   WD : 0.0001
   NESTEROV : false
-  FREEZE_BASE_EPOCHS: 5        
+  FREEZE_BASE_EPOCHS: 5   
+       
 TRAIN:
   BATCH_SIZE_PER_GPU: 18
   SHUFFLE: true
@@ -64,7 +63,7 @@ TRAIN:
   GAMMA2: 0.0
   MOMENTUM: 0.9
   NESTEROV: true
+  
 TEST:
   BATCH_SIZE_PER_GPU: 18
   FLIP_TEST: true
-
