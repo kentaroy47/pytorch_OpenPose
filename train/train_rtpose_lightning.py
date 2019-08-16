@@ -54,6 +54,8 @@ def parse_args():
     return args
 
 def load_pretrained_model(trainer, rtpose_model):
+    last_epoch = -1
+    last_ckpt_name = None
     checkpoints = os.listdir(trainer.checkpoint_callback.filepath)
     for name in checkpoints:
         # ignore hpc ckpts
@@ -277,6 +279,7 @@ optimizer = torch.optim.SGD(trainable_vars, lr=cfg.TRAIN.LR,
 load_pretrained_model(trainer, rtpose_vgg)
 model = rtpose_lightning(preprocess, target_transforms=None, model=rtpose_vgg, optimizer = optimizer)
 
+exp = Experiment(name=cfg.EXPERIMENT_NAME, save_dir=cfg.OUTPUT_DIR)
 trainer = Trainer(experiment=exp,
                   max_nb_epochs=cfg.TRAIN.EPOCHS,
                   gpus=cfg.GPUS,
