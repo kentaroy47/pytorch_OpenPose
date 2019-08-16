@@ -21,6 +21,8 @@ DATASET:
   TRAIN_SET: 'train2017'
   FLIP: true
   ROT_FACTOR: 40
+  SCALE_MIN: 0.5
+  SCALE_MAX: 1.1               
   IMAGE_SIZE: 368  
   TRAIN_IMAGE_DIR: 'images/train2017'
   TRAIN_ANNOTATIONS: ['annotations/person_keypoints_train2017.json']

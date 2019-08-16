@@ -60,7 +60,7 @@ print("Loading dataset...")
 preprocess = transforms.Compose([
     transforms.Normalize(),
     transforms.RandomApply(transforms.HFlip(), 0.5),
-    transforms.RescaleRelative(),
+    transforms.RescaleRelative(scale_range=(cfg.DATASET.SCALE_MIN, cfg.DATASET.SCALE_MAX)),
     transforms.Crop(cfg.DATASET.IMAGE_SIZE),
     transforms.CenterPad(cfg.DATASET.IMAGE_SIZE),
 ])
