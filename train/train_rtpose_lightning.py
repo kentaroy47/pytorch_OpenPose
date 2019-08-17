@@ -74,6 +74,7 @@ def load_pretrained_model(trainer, rtpose_model):
 
     last_ckpt_path = os.path.join(trainer.checkpoint_callback.filepath, last_ckpt_name)
     state_dict = torch.load(last_ckpt_path, map_location=lambda storage, loc: storage)['state_dict']
+    os.remove(last_ckpt_path)
     state_dict = {k.replace('model.',''):v for k,v in state_dict.items()}    
     rtpose_model.load_state_dict(state_dict)
  
@@ -280,7 +281,6 @@ optimizer = torch.optim.SGD(trainable_vars, lr=cfg.TRAIN.LR,
 load_pretrained_model(trainer, rtpose_vgg)
 model = rtpose_lightning(preprocess, target_transforms=None, model=rtpose_vgg, optimizer = optimizer)
 
-exp = Experiment(name=cfg.EXPERIMENT_NAME+'release', save_dir=cfg.OUTPUT_DIR)
 trainer = Trainer(experiment=exp,
                   max_nb_epochs=cfg.TRAIN.EPOCHS,
                   gpus=cfg.GPUS,
