@@ -19,7 +19,7 @@ Multi Person PoseEstimation By PyTorch
 
 ## Demo
 - Download [converted pytorch model](https://www.dropbox.com/s/ae071mfm2qoyc8v/pose_model.pth?dl=0).
-- Compile the C++ postprocessing: `cd pafprocess; swig -python -c++ pafprocess.i && python3 setup.py build_ext --inplace` 
+- Compile the C++ postprocessing: `cd lib/pafprocess; sh make.sh` 
 - `python demo/picture_demo.py` to run the picture demo.
 - `python demo/web_demo.py` to run the web demo.
 
@@ -30,7 +30,7 @@ c
 ### Main Results
 
 | model name| mAP |  Inference Time | 
-| :---------: | :---------: |
+| :---------: | :---------: |:---------: |
 |[original rtpose]   | 0.653 |-|
 
 Download link:

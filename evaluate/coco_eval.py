@@ -67,7 +67,7 @@ def get_multiplier(img):
     :param img: numpy array, the current image
     :returns : list of float. The computed scales
     """
-    scale_search = [0.5, 1., 1.5, 2.]
+    scale_search = [1.]
     return [x * 368. / float(img.shape[0]) for x in scale_search]
 
 
@@ -78,71 +78,34 @@ def get_outputs(multiplier, img, model, preprocess):
     :param model: pytorch model
     :returns: numpy arrays, the averaged paf and heatmap
     """
+    inp_size = 368
 
-    heatmap_avg = np.zeros((img.shape[0], img.shape[1], 19))
-    paf_avg = np.zeros((img.shape[0], img.shape[1], 38))
-    max_scale = multiplier[-1]
-    max_size = max_scale * img.shape[0]
     # padding
-    max_cropped, _, _ = im_transform.crop_with_factor(
-        img, max_size, factor=8, is_ceil=True)
-    batch_images = np.zeros(
-        (len(multiplier), 3, max_cropped.shape[0], max_cropped.shape[1]))
+    im_croped, im_scale, real_shape = im_transform.crop_with_factor(
+        img, inp_size, factor=8, is_ceil=True)
 
-    for m in range(len(multiplier)):
-        scale = multiplier[m]
-        inp_size = scale * img.shape[0]
+    if preprocess == 'rtpose':
+        im_data = rtpose_preprocess(im_croped)
 
-        # padding
-        im_croped, im_scale, real_shape = im_transform.crop_with_factor(
-            img, inp_size, factor=8, is_ceil=True)
+    elif preprocess == 'vgg':
+        im_data = vgg_preprocess(im_croped)
 
-        if preprocess == 'rtpose':
-            im_data = rtpose_preprocess(im_croped)
+    elif preprocess == 'inception':
+        im_data = inception_preprocess(im_croped)
 
-        elif preprocess == 'vgg':
-            im_data = vgg_preprocess(im_croped)
+    elif preprocess == 'ssd':
+        im_data = ssd_preprocess(im_croped)
 
-        elif preprocess == 'inception':
-            im_data = inception_preprocess(im_croped)
-
-        elif preprocess == 'ssd':
-            im_data = ssd_preprocess(im_croped)
-
-        batch_images[m, :, :im_data.shape[1], :im_data.shape[2]] = im_data
+    batch_images= np.expand_dims(im_data, 0)
 
     # several scales as a batch
     batch_var = torch.from_numpy(batch_images).cuda().float()
     predicted_outputs, _ = model(batch_var)
     output1, output2 = predicted_outputs[-2], predicted_outputs[-1]
-    heatmaps = output2.cpu().data.numpy().transpose(0, 2, 3, 1)
-    pafs = output1.cpu().data.numpy().transpose(0, 2, 3, 1)
+    heatmap = output2.cpu().data.numpy().transpose(0, 2, 3, 1)[0]
+    paf = output1.cpu().data.numpy().transpose(0, 2, 3, 1)[0]
 
-    for m in range(len(multiplier)):
-        scale = multiplier[m]
-        inp_size = scale * img.shape[0]
-
-        # padding
-        im_cropped, im_scale, real_shape = im_transform.crop_with_factor(
-            img, inp_size, factor=8, is_ceil=True)
-        heatmap = heatmaps[m, :int(im_cropped.shape[0] /
-                           8), :int(im_cropped.shape[1] / 8), :]
-        heatmap = cv2.resize(heatmap, None, fx=8, fy=8,
-                             interpolation=cv2.INTER_CUBIC)
-        heatmap = heatmap[0:real_shape[0], 0:real_shape[1], :]
-        heatmap = cv2.resize(
-            heatmap, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_CUBIC)
-
-        paf = pafs[m, :int(im_cropped.shape[0] / 8), :int(im_cropped.shape[1] / 8), :]
-        paf = cv2.resize(paf, None, fx=8, fy=8, interpolation=cv2.INTER_CUBIC)
-        paf = paf[0:real_shape[0], 0:real_shape[1], :]
-        paf = cv2.resize(
-            paf, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_CUBIC)
-
-        heatmap_avg = heatmap_avg + heatmap / len(multiplier)
-        paf_avg = paf_avg + paf / len(multiplier)
-
-    return paf_avg, heatmap_avg
+    return paf, heatmap
 
 
 def append_result(image_id, person_to_joint_assoc, joint_list, outputs):

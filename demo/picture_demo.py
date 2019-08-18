@@ -21,23 +21,26 @@ from lib.network.rtpose_vgg import get_model
 from lib.network import im_transform
 from lib.evaluate.coco_eval import get_multiplier, get_outputs, handle_paf_and_heat
 from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender
-from lib.pafprocess import pafprocess
+from lib.utils.paf_to_pose import paf_to_pose_cpp
+from lib.config import cfg, update_config
 
 
-def find_peaks(img):
-    """
-    Given a (grayscale) image, find local maxima whose value is above a given
-    threshold (param['thre1'])
-    :param img: Input image (2d array) where we want to find peaks
-    :return: 2d np.array containing the [x,y] coordinates of each peak found
-    in the image
-    """
+parser = argparse.ArgumentParser()
+parser.add_argument('--cfg', help='experiment configure file name',
+                    default='./experiments/vgg19_368x368_sgd_lr1.yaml', type=str)
+parser.add_argument('--weight', type=str,
+                    default='../ckpts/openpose.pth')
+parser.add_argument('opts',
+                    help="Modify config options using the command-line",
+                    default=None,
+                    nargs=argparse.REMAINDER)
+args = parser.parse_args()
 
-    peaks_binary = (maximum_filter(img, footprint=generate_binary_structure(
-        2, 1)) == img) * (img > 0.1)
-    out = np.zeros_like(img)
-    out[peaks_binary] = img[peaks_binary]
-    return out
+args = parser.parse_args()
+
+# update config file
+update_config(cfg, args.cfg)
+
 
 def draw_humans(npimg, humans, imgcopy=False):
     if imgcopy:
@@ -81,50 +84,9 @@ shape_dst = np.min(oriImg.shape[0:2])
 multiplier = get_multiplier(oriImg)
 
 with torch.no_grad():
-    orig_paf, orig_heat = get_outputs(
-        multiplier, oriImg, model,  'rtpose')
+    orig_paf, orig_heat = get_outputs(multiplier, oriImg, model,  'rtpose')
           
-    # Get results of flipped image
-    swapped_img = oriImg[:, ::-1, :]
-    flipped_paf, flipped_heat = get_outputs(multiplier, swapped_img,
-                                            model, 'rtpose')
-
-    # compute averaged heatmap and paf
-    paf, heatmap = handle_paf_and_heat(
-        orig_heat, flipped_heat, orig_paf, flipped_paf)
-            
-heatmap_peaks = np.zeros_like(heatmap)
-for i in range(19):
-    heatmap_peaks[:,:,i] = find_peaks(heatmap[:,:,i])
-heatmap_peaks = heatmap_peaks.astype(np.float32)
-heatmap = heatmap.astype(np.float32)
-paf = paf.astype(np.float32)
-
-#C++ postprocessing      
-pafprocess.process_paf(heatmap_peaks, heatmap, paf)
-
-humans = []
-for human_id in range(pafprocess.get_num_humans()):
-    human = Human([])
-    is_added = False
-
-    for part_idx in range(18):
-        c_idx = int(pafprocess.get_part_cid(human_id, part_idx))
-        if c_idx < 0:
-            continue
-
-        is_added = True
-        human.body_parts[part_idx] = BodyPart(
-            '%d-%d' % (human_id, part_idx), part_idx,
-            float(pafprocess.get_part_x(c_idx)) / heatmap.shape[1],
-            float(pafprocess.get_part_y(c_idx)) / heatmap.shape[0],
-            pafprocess.get_part_score(c_idx)
-        )
-
-    if is_added:
-        score = pafprocess.get_score(human_id)
-        human.score = score
-        humans.append(human)
+humans = paf_to_pose_cpp(heatmap, paf, cfg)
         
 out = draw_humans(oriImg, humans)
 cv2.imwrite('result.png',out)   
