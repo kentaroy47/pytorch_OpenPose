@@ -146,37 +146,37 @@ int process_paf(int p1, int p2, int p3, float *peaks, int h1, int h2, int h3, fl
             if (found == 1) {
                 if (subset[subset_idx1][part_id2] != conns[conn_id].cid2) {
                     subset[subset_idx1][part_id2] = conns[conn_id].cid2;
-                    subset[subset_idx1][9] += 1;
-                    subset[subset_idx1][8] += peak_infos_line[conns[conn_id].cid2].score + conns[conn_id].score;
+                    subset[subset_idx1][19] += 1;
+                    subset[subset_idx1][18] += peak_infos_line[conns[conn_id].cid2].score + conns[conn_id].score;
                 }
             } else if (found == 2) {
                 int membership = 0;
-                for (int subset_id = 0; subset_id < 8; subset_id++) {
+                for (int subset_id = 0; subset_id < 18; subset_id++) {
                     if (subset[subset_idx1][subset_id] > 0 && subset[subset_idx2][subset_id] > 0) {
                         membership = 2;
                     }
                 }
 
                 if (membership == 0) {
-                    for (int subset_id = 0; subset_id < 8; subset_id++)
+                    for (int subset_id = 0; subset_id < 18; subset_id++)
                         subset[subset_idx1][subset_id] += (subset[subset_idx2][subset_id] + 1);
 
-                    subset[subset_idx1][9] += subset[subset_idx2][9];
-                    subset[subset_idx1][8] += subset[subset_idx2][8];
-                    subset[subset_idx1][8] += conns[conn_id].score;
+                    subset[subset_idx1][19] += subset[subset_idx2][19];
+                    subset[subset_idx1][18] += subset[subset_idx2][18];
+                    subset[subset_idx1][18] += conns[conn_id].score;
                     subset.erase(subset.begin() + subset_idx2);
                 } else {
                     subset[subset_idx1][part_id2] = conns[conn_id].cid2;
-                    subset[subset_idx1][9] += 1;
-                    subset[subset_idx1][8] += peak_infos_line[conns[conn_id].cid2].score + conns[conn_id].score;
+                    subset[subset_idx1][19] += 1;
+                    subset[subset_idx1][18] += peak_infos_line[conns[conn_id].cid2].score + conns[conn_id].score;
                 }
-            } else if (found == 0 && pair_id < 8) {
-                vector<float> row(10);
-                for (int i = 0; i < 10; i++) row[i] = -1;
+            } else if (found == 0 && pair_id < 18) {
+                vector<float> row(20);
+                for (int i = 0; i < 20; i++) row[i] = -1;
                 row[part_id1] = conns[conn_id].cid1;
                 row[part_id2] = conns[conn_id].cid2;
-                row[9] = 2;
-                row[8] = peak_infos_line[conns[conn_id].cid1].score +
+                row[19] = 2;
+                row[18] = peak_infos_line[conns[conn_id].cid1].score +
                          peak_infos_line[conns[conn_id].cid2].score +
                          conns[conn_id].score;
                 subset.push_back(row);
@@ -186,7 +186,7 @@ int process_paf(int p1, int p2, int p3, float *peaks, int h1, int h2, int h3, fl
 
     // delete some rows
     for (int i = subset.size() - 1; i >= 0; i--) {
-        if (subset[i][9] < THRESH_PART_CNT || subset[i][8] / subset[i][9] < THRESH_HUMAN_SCORE)
+        if (subset[i][19] < THRESH_PART_CNT || subset[i][18] / subset[i][19] < THRESH_HUMAN_SCORE)
             subset.erase(subset.begin() + i);
     }
 
@@ -202,7 +202,7 @@ int get_part_cid(int human_id, int part_id) {
 }
 
 float get_score(int human_id) {
-    return subset[human_id][8] / subset[human_id][9];
+    return subset[human_id][18] / subset[human_id][19];
 }
 
 int get_part_x(int cid) {

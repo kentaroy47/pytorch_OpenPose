@@ -391,7 +391,7 @@ def paf_to_pose_cpp(heatmaps, pafs, config):
         for human_id in range(pafprocess.get_num_humans()):
             human = Human([])
             is_added = False
-            for part_idx in range(8):
+            for part_idx in range(config.MODEL.NUM_KEYPOINTS):
                 c_idx = int(pafprocess.get_part_cid(human_id, part_idx))
                 if c_idx < 0:
                     continue

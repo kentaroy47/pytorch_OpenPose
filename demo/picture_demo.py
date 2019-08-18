@@ -19,7 +19,7 @@ from scipy.ndimage.filters import gaussian_filter, maximum_filter
 
 from lib.network.rtpose_vgg import get_model
 from lib.network import im_transform
-from evaluate.coco_eval import get_multiplier, get_outputs, handle_paf_and_heat
+from evaluate.coco_eval import get_outputs, handle_paf_and_heat
 from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender
 from lib.utils.paf_to_pose import paf_to_pose_cpp
 from lib.config import cfg, update_config
@@ -66,7 +66,7 @@ def draw_humans(npimg, humans, imgcopy=False):
 
     return npimg
         
-weight_name = './lib/network/weight/pose_model.pth'
+weight_name = '/home/tensorboy/data/pretrained_models/pose_model.pth'
 
 model = get_model('vgg19')     
 model.load_state_dict(torch.load(weight_name))
@@ -79,11 +79,11 @@ oriImg = cv2.imread(test_image) # B,G,R order
 shape_dst = np.min(oriImg.shape[0:2])
 
 # Get results of original image
-multiplier = get_multiplier(oriImg)
 
 with torch.no_grad():
-    orig_paf, orig_heat = get_outputs(multiplier, oriImg, model,  'rtpose')
+    paf, heatmap, im_scale = get_outputs(oriImg, model,  'rtpose')
           
+print(im_scale)
 humans = paf_to_pose_cpp(heatmap, paf, cfg)
         
 out = draw_humans(oriImg, humans)

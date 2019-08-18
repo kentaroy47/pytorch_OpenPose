@@ -19,24 +19,23 @@ from scipy.ndimage.filters import gaussian_filter, maximum_filter
 
 from lib.network.rtpose_vgg import get_model
 from lib.network import im_transform
-from lib.evaluate.coco_eval import get_multiplier, get_outputs, handle_paf_and_heat
+from evaluate.coco_eval import get_outputs, handle_paf_and_heat
 from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender
 from lib.pafprocess import pafprocess
 
-def find_peaks(img):
-    """
-    Given a (grayscale) image, find local maxima whose value is above a given
-    threshold (param['thre1'])
-    :param img: Input image (2d array) where we want to find peaks
-    :return: 2d np.array containing the [x,y] coordinates of each peak found
-    in the image
-    """
+parser = argparse.ArgumentParser()
+parser.add_argument('--cfg', help='experiment configure file name',
+                    default='./experiments/vgg19_368x368_sgd_lr1.yaml', type=str)
+parser.add_argument('--weight', type=str,
+                    default='../ckpts/openpose.pth')
+parser.add_argument('opts',
+                    help="Modify config options using the command-line",
+                    default=None,
+                    nargs=argparse.REMAINDER)
+args = parser.parse_args()
 
-    peaks_binary = (maximum_filter(img, footprint=generate_binary_structure(
-        2, 1)) == img) * (img > 0.1)
-    out = np.zeros_like(img)
-    out[peaks_binary] = img[peaks_binary]
-    return out
+# update config file
+update_config(cfg, args)
 
 def draw_humans(npimg, humans, imgcopy=False):
     if imgcopy:

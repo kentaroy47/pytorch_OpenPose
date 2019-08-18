@@ -62,16 +62,9 @@ def eval_coco(outputs, annFile, imgIds):
     return cocoEval.stats[0]
 
 
-def get_multiplier(img):
-    """Computes the sizes of image at different scales
-    :param img: numpy array, the current image
-    :returns : list of float. The computed scales
-    """
-    scale_search = [1.]
-    return [x * 368. / float(img.shape[0]) for x in scale_search]
 
 
-def get_outputs(multiplier, img, model, preprocess):
+def get_outputs(img, model, preprocess):
     """Computes the averaged heatmap and paf for the given image
     :param multiplier:
     :param origImg: numpy array, the image being processed
@@ -105,7 +98,7 @@ def get_outputs(multiplier, img, model, preprocess):
     heatmap = output2.cpu().data.numpy().transpose(0, 2, 3, 1)[0]
     paf = output1.cpu().data.numpy().transpose(0, 2, 3, 1)[0]
 
-    return paf, heatmap
+    return paf, heatmap, im_scale
 
 
 def append_result(image_id, person_to_joint_assoc, joint_list, outputs):

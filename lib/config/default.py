@@ -38,6 +38,7 @@ _C.MODEL.HEATMAP_SIZE = [64, 64]  # width * height, ex: 24 * 32
 _C.MODEL.SIGMA = 2
 _C.MODEL.EXTRA = CN(new_allowed=True)
 _C.MODEL.NUM_KEYPOINTS = 18
+_C.MODEL.DOWNSAMPLE = 8
 
 _C.LOSS = CN()
 _C.LOSS.USE_OHKM = False
@@ -122,6 +123,10 @@ _C.TEST.COCO_BBOX_FILE = ''
 _C.TEST.BBOX_THRE = 1.0
 _C.TEST.MODEL_FILE = ''
 
+_C.TEST.THRESH_HEATMAP =  0.1
+_C.TEST.THRESH_PAF= 0.05
+_C.TEST.NUM_INTERMED_PTS_BETWEEN_KEYPOINTS= 10 
+  
 # debug
 _C.DEBUG = CN()
 _C.DEBUG.DEBUG = False
@@ -135,12 +140,6 @@ def update_config(cfg, args):
     cfg.defrost()
     cfg.merge_from_file(args.cfg)
     cfg.merge_from_list(args.opts)
-
-    if args.outputDir:
-        cfg.OUTPUT_DIR = args.outputDir
-
-    if args.dataDir:
-        cfg.DATA_DIR = args.dataDir
 
     cfg.DATASET.ROOT = os.path.join(
         cfg.DATA_DIR, cfg.DATASET.DATASET
