@@ -19,7 +19,7 @@ from scipy.ndimage.filters import gaussian_filter, maximum_filter
 
 from lib.network.rtpose_vgg import get_model
 from lib.network import im_transform
-from lib.evaluate.coco_eval import get_multiplier, get_outputs, handle_paf_and_heat
+from evaluate.coco_eval import get_multiplier, get_outputs, handle_paf_and_heat
 from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender
 from lib.utils.paf_to_pose import paf_to_pose_cpp
 from lib.config import cfg, update_config
@@ -36,10 +36,8 @@ parser.add_argument('opts',
                     nargs=argparse.REMAINDER)
 args = parser.parse_args()
 
-args = parser.parse_args()
-
 # update config file
-update_config(cfg, args.cfg)
+update_config(cfg, args)
 
 
 def draw_humans(npimg, humans, imgcopy=False):
