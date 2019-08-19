@@ -28,7 +28,7 @@ def parse_args():
     )
     parser.add_argument('--cfg',
                         help='experiment configure file name',
-                        default='../experiments/vgg19_368x368_sgd_lr1.yaml',
+                        default='../experiments/vgg19_368x368_sgd.yaml',
                         type=str)
     parser.add_argument('opts',
                         help="Modify config options using the command-line",
