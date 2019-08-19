@@ -38,10 +38,6 @@ def parse_args():
                         help='output file')
     parser.add_argument('--disable-cuda', action='store_true',
                         help='disable CUDA')
-    parser.add_argument('--outputDir', default='/data/rtpose', type=str, metavar='DIR',
-                        help='path to where the log saved')
-    parser.add_argument('--dataDir', default='/data', type=str, metavar='DIR',
-                        help='path to where the data saved')
     args = parser.parse_args()
 
     # add args.device
@@ -225,6 +221,7 @@ class rtpose_lightning(pl.LightningModule):
         return val_loader
 
 exp = Experiment(name=cfg.EXPERIMENT_NAME, save_dir=cfg.OUTPUT_DIR)
+
 # callbacks
 early_stop = EarlyStopping(
     monitor='avg_val_loss',
