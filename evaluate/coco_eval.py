@@ -3,6 +3,7 @@ import time
 
 import cv2
 import numpy as np
+import argparse
 import json
 import pandas as pd
 from pycocotools.coco import COCO
@@ -12,8 +13,26 @@ import torch
 from lib.datasets.preprocessing import (inception_preprocess,
                                               rtpose_preprocess,
                                               ssd_preprocess, vgg_preprocess)
-from lib.network.post import decode_pose
-from lib.network import im_transform
+from lib.network import im_transform                                              
+from lib.config import cfg, update_config
+from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender, draw_humans
+from lib.utils.paf_to_pose import paf_to_pose_cpp
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--cfg', help='experiment configure file name',
+                    default='./experiments/vgg19_368x368_sgd.yaml', type=str)
+parser.add_argument('--weight', type=str,
+                    default='../ckpts/openpose.pth')
+parser.add_argument('opts',
+                    help="Modify config options using the command-line",
+                    default=None,
+                    nargs=argparse.REMAINDER)
+args = parser.parse_args()
+
+# update config file
+update_config(cfg, args)
+
 
 '''
 MS COCO annotation order:
@@ -71,11 +90,11 @@ def get_outputs(img, model, preprocess):
     :param model: pytorch model
     :returns: numpy arrays, the averaged paf and heatmap
     """
-    inp_size = 368
+    inp_size = cfg.DATASET.IMAGE_SIZE
 
     # padding
     im_croped, im_scale, real_shape = im_transform.crop_with_factor(
-        img, inp_size, factor=8, is_ceil=True)
+        img, inp_size, factor=cfg.MODEL.DOWNSAMPLE, is_ceil=True)
 
     if preprocess == 'rtpose':
         im_data = rtpose_preprocess(im_croped)
@@ -101,7 +120,47 @@ def get_outputs(img, model, preprocess):
     return paf, heatmap, im_scale
 
 
-def append_result(image_id, person_to_joint_assoc, joint_list, outputs):
+def append_result(image_id, humans, upsample_keypoints, outputs):
+    """Build the outputs to be evaluated
+    :param image_id: int, the id of the current image
+    :param person_to_joint_assoc: numpy array of joints associations
+    :param joint_list: list, list of joints
+    :param outputs: list of dictionaries with the following keys: image_id,
+                    category_id, keypoints, score
+    """ 
+    for human in humans:
+        one_result = {
+            "image_id": 0,
+            "category_id": 1,
+            "keypoints": [],
+            "score": 0
+        }
+        one_result["image_id"] = image_id
+        keypoints = np.zeros((18, 3))       
+        
+        all_scores = []
+        for i in range(cfg.MODEL.NUM_KEYPOINTS):
+            if i not in human.body_parts.keys():
+                keypoints[i, 0] = 0
+                keypoints[i, 1] = 0
+                keypoints[i, 2] = 0
+            else:
+                body_part = human.body_parts[i]
+                center = (body_part.x * upsample_keypoints[1] + 0.5, body_part.y * upsample_keypoints[0] + 0.5)           
+                keypoints[i, 0] = center[0]
+                keypoints[i, 1] = center[1]
+                keypoints[i, 2] = 1     
+                score = human.body_parts[i].score 
+                all_scores.append(score)
+                
+        keypoints = keypoints[ORDER_COCO,:]
+        one_result["score"] = 1.
+        one_result["keypoints"] = list(keypoints.reshape(51))
+
+        outputs.append(one_result)
+
+
+def append_result_legacy(image_id, person_to_joint_assoc, joint_list, outputs):
     """Build the outputs to be evaluated
     :param image_id: int, the id of the current image
     :param person_to_joint_assoc: numpy array of joints associations
@@ -140,8 +199,7 @@ def append_result(image_id, person_to_joint_assoc, joint_list, outputs):
         one_result["keypoints"] = list(keypoints.reshape(51))
 
         outputs.append(one_result)
-
-
+        
 def handle_paf_and_heat(normal_heat, flipped_heat, normal_paf, flipped_paf):
     """Compute the average of normal and flipped heatmap and paf
     :param normal_heat: numpy array, the normal heatmap
@@ -218,29 +276,17 @@ def run_eval(image_dir, anno_file, vis_dir, model, preprocess):
         shape_dst = np.min(oriImg.shape[0:2])
 
         # Get results of original image
-        multiplier = get_multiplier(oriImg)
-        orig_paf, orig_heat = get_outputs(
-            multiplier, oriImg, model,  preprocess)
+        paf, heatmap, scale_img = get_outputs(oriImg, model,  preprocess)
 
-        # Get results of flipped image
-        swapped_img = oriImg[:, ::-1, :]
-        flipped_paf, flipped_heat = get_outputs(multiplier, swapped_img,
-                                                model, preprocess)
-
-        # compute averaged heatmap and paf
-        paf, heatmap = handle_paf_and_heat(
-            orig_heat, flipped_heat, orig_paf, flipped_paf)
-
-        # choose which post-processing to use, our_post_processing
-        # got slightly higher AP but is slow.
-        param = {'thre1': 0.1, 'thre2': 0.05, 'thre3': 0.5}
-        canvas, to_plot, candidate, subset = decode_pose(
-            oriImg, param, heatmap, paf)
+        humans = paf_to_pose_cpp(heatmap, paf, cfg)
+                
+        out = draw_humans(oriImg, humans)
             
         vis_path = os.path.join(vis_dir, file_name)
-        cv2.imwrite(vis_path, to_plot)
+        cv2.imwrite(vis_path, out)
         # subset indicated how many peoples foun in this image.
-        append_result(img_ids[i], subset, candidate, outputs)
+        upsample_keypoints = (heatmap.shape[0]*cfg.MODEL.DOWNSAMPLE/scale_img, heatmap.shape[1]*cfg.MODEL.DOWNSAMPLE/scale_img)
+        append_result(img_ids[i], humans, upsample_keypoints, outputs)
 
     # Eval and show the final result!
     return eval_coco(outputs=outputs, annFile=anno_file, imgIds=img_ids)

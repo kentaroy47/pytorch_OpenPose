@@ -20,7 +20,7 @@ from scipy.ndimage.filters import gaussian_filter, maximum_filter
 from lib.network.rtpose_vgg import get_model
 from lib.network import im_transform
 from evaluate.coco_eval import get_outputs, handle_paf_and_heat
-from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender
+from lib.utils.common import Human, BodyPart, CocoPart, CocoColors, CocoPairsRender, draw_humans
 from lib.utils.paf_to_pose import paf_to_pose_cpp
 from lib.config import cfg, update_config
 
@@ -39,32 +39,6 @@ args = parser.parse_args()
 # update config file
 update_config(cfg, args)
 
-
-def draw_humans(npimg, humans, imgcopy=False):
-    if imgcopy:
-        npimg = np.copy(npimg)
-    image_h, image_w = npimg.shape[:2]
-    centers = {}
-    for human in humans:
-        # draw point
-        for i in range(CocoPart.Background.value):
-            if i not in human.body_parts.keys():
-                continue
-
-            body_part = human.body_parts[i]
-            center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
-            centers[i] = center
-            cv2.circle(npimg, center, 3, CocoColors[i], thickness=3, lineType=8, shift=0)
-
-        # draw line
-        for pair_order, pair in enumerate(CocoPairsRender):
-            if pair[0] not in human.body_parts.keys() or pair[1] not in human.body_parts.keys():
-                continue
-
-            # npimg = cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
-            cv2.line(npimg, centers[pair[0]], centers[pair[1]], CocoColors[pair_order], 3)
-
-    return npimg
         
 weight_name = '/home/tensorboy/data/pretrained_models/pose_model.pth'
 
