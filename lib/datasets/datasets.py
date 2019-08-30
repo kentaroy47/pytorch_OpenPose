@@ -109,12 +109,14 @@ class CocoKeypoints(torch.utils.data.Dataset):
     """
 
     def __init__(self, root, annFile, image_transform=None, target_transforms=None,
-                 n_images=None, preprocess=None, all_images=False, all_persons=False, input_y=368, input_x=368, stride=8):
+                 n_images=None, preprocess=None, all_images=None, all_persons=False, input_y=368, input_x=368, stride=8):
         from pycocotools.coco import COCO
         self.root = root
         self.coco = COCO(annFile)
 
         self.cat_ids = self.coco.getCatIds(catNms=['person'])
+               
+
         if all_images:
             self.ids = self.coco.getImgIds()
         elif all_persons:
